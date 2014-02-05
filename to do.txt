@@ -1,0 +1,5 @@
+-trap error when dropping on parent
+-background as droppable
+-keep track of positions of columns
+-redraw
+-don't do lines for now

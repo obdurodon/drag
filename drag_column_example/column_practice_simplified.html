@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>Drag and Drop</title>
+        <style>
+            #col1, #col2, #col3 {
+                float:left;
+                width:200px;
+                height:500px;
+                margin:50px;
+                padding:20px;
+            }
+            
+            #drop {
+                width:100%;
+                height:500px;
+            }
+        </style>
+        <script type="text/javascript">
+            function allowDrop(ev) {
+                ev.preventDefault();
+            }
+            
+            function drag(ev) {
+                ev.dataTransfer.setData("Text", ev.target.id);
+            }
+            
+            function drop(ev) {
+                ev.preventDefault();
+                var x=event.clientX;
+                var y=event.clientY;
+                alert("X coords: " + x + ", Y coords: " + y);
+            }
+            
+            function dragOut(ev) {
+                ev.target.style.borderColor="#aaaaaa";
+            }
+        </script>
+    </head>
+    <body>
+        <div id="drop" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <div id="col1" draggable="true">
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                    <g class="c01DB" fill="yellow">
+                        <rect x="30" y="17" width="60" height="100" stroke="black" stroke-width="1"></rect>
+                        <title>Молитви над бабина вода</title>
+                        <a xlink:href="http://repertorium.obdurodon.org/runSearch.php?country=all&amp;settlement=all&amp;repository=all&amp;bgTexts=Молитви над бабина вода&amp;enTexts=all&amp;ruTexts=all">
+                            <text x="32" y="31" stroke="black" stroke-width="0.5" font-size="95%">COL #1</text>
+                        </a>
+                    </g>
+                </svg>
+            </div>
+            <div id="col2" draggable="true">
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                    <g class="c01DB" fill="yellow">
+                        <rect x="60" y="17" width="60" height="100" stroke="black" stroke-width="1"></rect>
+                        <title>Молитви над бабина вода</title>
+                        <a xlink:href="http://repertorium.obdurodon.org/runSearch.php?country=all&amp;settlement=all&amp;repository=all&amp;bgTexts=Молитви над бабина вода&amp;enTexts=all&amp;ruTexts=all">
+                            <text x="62" y="31" stroke="black" stroke-width="0.5" font-size="95%">COL #2</text>
+                        </a>
+                    </g>
+                </svg>
+            </div>
+            <div id="col3" draggable="true">
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                    <g class="c01DB" fill="yellow">
+                        <rect x="90" y="17" width="60" height="100" stroke="black" stroke-width="1"></rect>
+                        <title>Молитви над бабина вода</title>
+                        <a xlink:href="http://repertorium.obdurodon.org/runSearch.php?country=all&amp;settlement=all&amp;repository=all&amp;bgTexts=Молитви над бабина вода&amp;enTexts=all&amp;ruTexts=all">
+                            <text x="92" y="31" stroke="black" stroke-width="0.5" font-size="95%">COL #3</text>
+                        </a>
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </body>
+</html>
