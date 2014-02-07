@@ -1,5 +1,7 @@
--trap error when dropping on parent
--background as droppable
--keep track of positions of columns
--redraw
--don't do lines for now
+- look up console log (to replace alerts)
+- return x coords of all columns
+- redraw ordering by x position
+- lines don't need to be draggable
+- make sure to remove lines from DOM
+- if x position is within the width of curr column, don't drop
+- update Sunday to figure out if we meet Monday or Friday
