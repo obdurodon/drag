@@ -1,18 +1,25 @@
 function allowDrop(ev) {
     ev.preventDefault();
 }
-            
+
 function drag(ev) {
-    ev.dataTransfer.setData("Text", ev.target.id);
+    ev.dataTransfer.setData("Text", ev.target.getAttribute('id'));
 }
             
 function drop(ev) {
     ev.preventDefault();
-    var callId = ev.getAttribute("id");
-    cols = document.getElementsByClassName("col");
+    var callId = ev.dataTransfer.getData("Text");
+    cols = document.getElementsByClassName('col');
     colsLength = cols.length;
+    
+    var x1 = cols[0].getBoundingClientRect().left;
+    var x2 = cols[1].getBoundingClientRect().left;
+    var interval = x2 - x1;
+    
+    console.log(interval);
+    
     for (i = 0; i < colsLength; i++) {
-        var id = cols[i].getAttribute("id");
+        var id = cols[i].getAttribute('id');
         if (callId == id) {
             console.log("column " + (i+1) + ": " + ev.clientX);
         } else {
@@ -20,6 +27,8 @@ function drop(ev) {
             console.log("column " + (i+1) + ": " + rect.left);
         }
     }
+    
+    // window.location.reload();
 }
             
 function dragOut(ev) {
