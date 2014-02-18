@@ -1,7 +1,15 @@
-- look up console log (to replace alerts)
-- return x coords of all columns
-- redraw ordering by x position
-- lines don't need to be draggable
-- make sure to remove lines from DOM
-- if x position is within the width of curr column, don't drop
-- update Sunday to figure out if we meet Monday or Friday
+TO REPOSITION COLUMNS
+
+dataPrefix attribute (data-...)
+build array with id and xpos
+	sort by xpos
+map from lowest to highest on lower case letter (a,b, c...)
+sort divs on data attribute
+
+TO KEEP LIST
+http://snook.ca/archives/javascript/global_variable
+
+TO KEEP RESIZING
+later on, think of creating svg with foreign object to wrap around parent div
+
+global variable for array of divs!

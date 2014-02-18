@@ -28,7 +28,6 @@ function drop(ev) {
         }
     }
     
-    // window.location.reload();
 }
             
 function dragOut(ev) {
