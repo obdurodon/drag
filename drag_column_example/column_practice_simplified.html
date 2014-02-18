@@ -17,30 +17,11 @@
                 height:500px;
             }
         </style>
-        <script type="text/javascript">
-            function allowDrop(ev) {
-                ev.preventDefault();
-            }
-            
-            function drag(ev) {
-                ev.dataTransfer.setData("Text", ev.target.id);
-            }
-            
-            function drop(ev) {
-                ev.preventDefault();
-                var x=event.clientX;
-                var y=event.clientY;
-                alert("X coords: " + x + ", Y coords: " + y);
-            }
-            
-            function dragOut(ev) {
-                ev.target.style.borderColor="#aaaaaa";
-            }
-        </script>
+        <script type="text/javascript" src="drag.js">//</script>
     </head>
     <body>
         <div id="drop" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <div id="col1" draggable="true">
+            <div id="col1" class="col" draggable="true">
                 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                     <g class="c01DB" fill="yellow">
                         <rect x="30" y="17" width="60" height="100" stroke="black" stroke-width="1"></rect>
@@ -51,7 +32,7 @@
                     </g>
                 </svg>
             </div>
-            <div id="col2" draggable="true">
+            <div id="col2" class="col" draggable="true">
                 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                     <g class="c01DB" fill="yellow">
                         <rect x="60" y="17" width="60" height="100" stroke="black" stroke-width="1"></rect>
@@ -62,7 +43,7 @@
                     </g>
                 </svg>
             </div>
-            <div id="col3" draggable="true">
+            <div id="col3" class="col" draggable="true">
                 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                     <g class="c01DB" fill="yellow">
                         <rect x="90" y="17" width="60" height="100" stroke="black" stroke-width="1"></rect>
