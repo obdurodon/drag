@@ -17,7 +17,7 @@ function drop(ev) {
     // add id and xpos to 2D array
     for (i = 0; i < colsLength; i++) {        
         var id = cols[i].getAttribute('id');
-        if (callId == id) {
+        if (callId == id) {            
             xposArr[i] = new Array();
             xposArr[i][0] = id;
             xposArr[i][1] = ev.clientX;
