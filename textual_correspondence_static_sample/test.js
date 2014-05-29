@@ -1,23 +1,29 @@
+// drag and drop based on http://dl.dropboxusercontent.com/u/169269/group_drag.svg
 function startMove(evt) {
-    mouseStartX = evt.clientX;
     //global variable, used by moveIt()
-    var objectX = this.firstElementChild.getAttribute('x');
-    console.log('startMove for object ' + this.id + ' with objectX=' + objectX + ' and mouseX=' + mouseStartX);
-    this.addEventListener('mousemove', moveIt, false);
+    mouseStartX = evt.clientX;
+    //svg has no concept of z height, so replace with clone at end of sequence to avoid losing focus
+    var newG = this.cloneNode(true);
+    this.parentNode.appendChild(newG);
+    this.parentNode.removeChild(this);
+    var objectX = newG.getAttribute('transform').slice(10, -1);
+    console.log('startMove for object ' + newG.id + ' with objectX=' + objectX + ' and mouseX=' + mouseStartX);
+    newG.addEventListener('mousedown', startMove, false);
+    newG.addEventListener('mousemove', moveIt, false);
+    newG.addEventListener('mouseup', endMove, false);
 }
 function endMove(evt) {
     this.removeEventListener('mousemove', moveIt, false);
     console.log('endMove at mouse position ' + evt.clientX);
 }
 function moveIt(evt) {
-    var x1 = evt.clientX;
     var g = this;
-    var oldObjectX = g.getAttribute('x');
-    var distanceMoved = x1 - mouseStartX;
-    var newObjectX = parseInt(oldObjectX) + distanceMoved;
-    console.log('Now moving ' + this.id + ' at ' + oldObjectX + ' by ' + distanceMoved + ' pixels to ' + newObjectX);
-    g.setAttribute('x', newObjectX);
-    x1 = evt.clientX;
+    var oldObjectX = g.getAttribute('transform').slice(10, -1);
+    var newObjectX = parseInt(oldObjectX) + evt.clientX - mouseStartX;
+    console.log('Now moving ' + this.id + ' at ' + oldObjectX + ' to ' + newObjectX);
+    g.setAttribute('transform', 'translate(' + newObjectX + ')');
+    mouseStartX = evt.clientX;
+    // global variable, initialized in startMove()
 }
 function init() {
     var columns = document.getElementsByClassName('draggable');
@@ -25,6 +31,8 @@ function init() {
         columns[i].addEventListener('mousedown', startMove, false);
         columns[i].addEventListener('mouseup', endMove, false);
     }
+}
+function drawLines() {
 }
 function eraseLines() {
     // someday this will be easier: http://red-team-design.com/removing-an-element-with-plain-javascript-remove-method/
