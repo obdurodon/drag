@@ -1,4 +1,5 @@
 // drag and drop based on http://dl.dropboxusercontent.com/u/169269/group_drag.svg
+// see also http://www.codedread.com/dragtest2.svg
 function startMove(evt) {
     //global variable, used by moveIt()
     mouseStartX = evt.clientX;
