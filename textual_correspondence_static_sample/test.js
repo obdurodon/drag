@@ -4,24 +4,31 @@ function startMove(evt) {
     //global variable, used by moveIt()
     mouseStartX = evt.clientX;
     //svg has no concept of z height, so replace with clone at end of sequence to avoid losing focus
-    var newG = this.cloneNode(true);
+    //also global, so that it can be tracked even when the mouse races ahead
+    newG = this.cloneNode(true);
     this.parentNode.appendChild(newG);
     this.parentNode.removeChild(this);
     var objectX = newG.getAttribute('transform').slice(10, -1);
     console.log('startMove for object ' + newG.id + ' with objectX=' + objectX + ' and mouseX=' + mouseStartX);
     newG.addEventListener('mousedown', startMove, false);
-    newG.addEventListener('mousemove', moveIt, false);
-    newG.addEventListener('mouseup', endMove, false);
+    window.addEventListener('mousemove', moveIt, false);
+    window.addEventListener('mouseup', endMove, false);
+    var lines = document.getElementsByTagName('line');
+    for (i = 0; i < lines.length; i++) {
+        lines[i].style.stroke = 'lightgray';
+    }
 }
 function endMove(evt) {
-    this.removeEventListener('mousemove', moveIt, false);
+    window.removeEventListener('mousemove', moveIt, false);
+    newG = null;
     console.log('endMove at mouse position ' + evt.clientX);
+    eraseLines();
 }
 function moveIt(evt) {
-    var g = this;
+    var g = newG;
     var oldObjectX = g.getAttribute('transform').slice(10, -1);
     var newObjectX = parseInt(oldObjectX) + evt.clientX - mouseStartX;
-    console.log('Now moving ' + this.id + ' at ' + oldObjectX + ' to ' + newObjectX);
+    console.log('Now moving ' + g.id + ' at ' + oldObjectX + ' to ' + newObjectX);
     g.setAttribute('transform', 'translate(' + newObjectX + ')');
     mouseStartX = evt.clientX;
     // global variable, initialized in startMove()
@@ -30,8 +37,8 @@ function init() {
     var columns = document.getElementsByClassName('draggable');
     for (var i = 0; i < columns.length; i++) {
         columns[i].addEventListener('mousedown', startMove, false);
-        columns[i].addEventListener('mouseup', endMove, false);
     }
+    window.addEventListener('mouseup', endMove, false);
 }
 function drawLines() {
 }
