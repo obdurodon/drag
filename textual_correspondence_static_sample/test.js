@@ -17,7 +17,6 @@ function startMove(evt) {
     this.parentNode.parentNode.removeChild(this.parentNode);
     //objectX is global, records starting position of drag
     objectX = parseInt(newG.getAttribute('transform').slice(10, -1));
-    //console.log('startMove for object ' + newG.id + ' with objectX=' + objectX + ' and mouseX=' + mouseStartX);
     newG.getElementsByTagName('image')[0].addEventListener('mousedown', startMove, false);
     window.addEventListener('mousemove', moveIt, false);
     window.addEventListener('mouseup', endMove, false);
@@ -34,14 +33,23 @@ function startMove(evt) {
 }
 function endMove(evt) {
     window.removeEventListener('mousemove', moveIt, false);
+    var landingPos = parseInt(newG.getAttribute('transform').slice(10, -1));
+    var columns = document.getElementsByClassName('draggable');
+    var allNewColumnPositions =[];
+    for (i = 0; i < columns.length; i++) {
+        allNewColumnPositions.push(parseInt(columns[i].getAttribute('transform').slice(10, -1)));
+    }
+    // numerical array sorting at http://www.w3schools.com/jsref/jsref_sort.asp
+    for (i = 0; i < allColumnPositions.length; i++) {
+        if (allNewColumnPositions.indexOf(allColumnPositions[i]) == -1) {
+            newG.setAttribute('transform', 'translate(' + allColumnPositions[i] + ')')
+        }
+    }
     newG = null;
-    //console.log('endMove at mouse position ' + evt.clientX);
-    eraseLines();
     var lines = document.getElementsByTagName('line');
     for (i = 0; i < lines.length; i++) {
         lines[i].style.stroke = 'black';
     }
-    var columns = document.getElementsByClassName('draggable');
     for (i = 0; i < columns.length; i++) {
         columns[i].style.opacity = '1';
     }
@@ -49,30 +57,34 @@ function endMove(evt) {
 function moveIt(evt) {
     var oldObjectX = newG.getAttribute('transform').slice(10, -1);
     var newObjectX = parseInt(oldObjectX) + evt.clientX - mouseStartX;
-    //console.log('Now moving ' + newG.id + ' at ' + oldObjectX + ' to ' + newObjectX);
     newG.setAttribute('transform', 'translate(' + newObjectX + ')');
     // global variable, initialized in startMove()
     mouseStartX = evt.clientX;
     if (newObjectX < objectX - spacing && newObjectX != '0') {
         swapColumns('left', evt.clientX);
-    } else if (newObjectX > objectX + spacing && newObjectX < farRight) {
+    } else if (newObjectX > objectX + spacing && objectX != farRight) {
         swapColumns('right', evt.clientX);
     }
 }
 function swapColumns(side, mousePos) {
+    eraseLines();
     var newObjectX = parseInt(newG.getAttribute('transform').slice(10, -1));
     var columns = document.getElementsByClassName('draggable');
     if (side == 'left') {
-        for (var i = 0; i < columns.length; i++) {
+        for (var i = 0;
+        i < columns.length;
+        i++) {
             var neighborPos = parseInt(columns[i].getAttribute('transform').slice(10, -1));
             if (neighborPos == objectX - spacing) {
                 columns[i].setAttribute('transform', 'translate(' + objectX + ')');
                 objectX = objectX - spacing;
+                break;
             }
         }
     } else if (side == 'right') {
-        // must count backward to avoid destructive iteration
-        for (var i = 0; i < columns.length; i++) {
+        for (var i = 0;
+        i < columns.length;
+        i++) {
             var neighborPos = parseInt(columns[i].getAttribute('transform').slice(10, -1));
             if (neighborPos == objectX + spacing) {
                 columns[i].setAttribute('transform', 'translate(' + objectX + ')');
@@ -88,20 +100,29 @@ function eraseLines() {
     // someday this will be easier: http://red-team-design.com/removing-an-element-with-plain-javascript-remove-method/
     // must work backwards: http://stackoverflow.com/questions/1457544/javascript-loop-only-applying-to-every-other-element
     var lines = document.getElementsByTagName('line');
-    for (var i = lines.length - 1; i >= 0; i--) {
+    for (var i = lines.length - 1;
+    i >= 0;
+    i--) {
         lines[i].parentNode.removeChild(lines[i]);
     }
 }
 function plectogram_init() {
     var images = document.getElementsByTagName('image');
-    for (var i = 0; i < images.length; i++) {
+    for (var i = 0;
+    i < images.length;
+    i++) {
         images[i].addEventListener('mousedown', startMove, false);
     }
-    //Intercolumn distance (global variable) used to determine when columns have crossed
+    //Intercolumn distance (global variable "spacing") used to determine when columns have crossed
+    //allColumnPositions is used find vacant column to position target at mouseup
     var columns = document.getElementsByClassName('draggable');
     spacing = parseInt(columns[1].getAttribute('transform').slice(10, -1)) - parseInt(columns[0].getAttribute('transform').slice(10, -1));
+    allColumnPositions =[];
+    for (var i = 0;
+    i < columns.length;
+    i++) {
+        allColumnPositions.push((i + 1) * spacing);
+    }
     farRight = spacing * parseInt(document.getElementsByClassName('draggable').length);
-    console.log('Intercolumn spacing is ' + spacing + ' pixels');
-    window.addEventListener('mouseup', endMove, false);
 }
 window.addEventListener('load', plectogram_init, false);
