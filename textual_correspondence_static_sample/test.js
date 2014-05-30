@@ -33,6 +33,7 @@ function startMove(evt) {
 }
 function endMove(evt) {
     window.removeEventListener('mousemove', moveIt, false);
+    window.removeEventListener('mouseup', endMove, false);
     var landingPos = parseInt(newG.getAttribute('transform').slice(10, -1));
     var columns = document.getElementsByClassName('draggable');
     var allNewColumnPositions =[];
@@ -45,7 +46,7 @@ function endMove(evt) {
             newG.setAttribute('transform', 'translate(' + allColumnPositions[i] + ')')
         }
     }
-    newG = null;
+    drawLines();
     var lines = document.getElementsByTagName('line');
     for (i = 0; i < lines.length; i++) {
         lines[i].style.stroke = 'black';
@@ -53,6 +54,7 @@ function endMove(evt) {
     for (i = 0; i < columns.length; i++) {
         columns[i].style.opacity = '1';
     }
+    newG = null;
 }
 function moveIt(evt) {
     var oldObjectX = newG.getAttribute('transform').slice(10, -1);
@@ -95,6 +97,22 @@ function swapColumns(side, mousePos) {
     }
 }
 function drawLines() {
+    var columns = document.getElementsByClassName('draggable');
+    var columnObject = new Object();
+    var columnCellsObject = new Object();
+    for (i = 0; i < columns.length; i++) {
+        columnId = columns[i].getAttribute('transform').slice(10, -1);
+        columnObject[columnId] = columns[i];
+        var columnCells = columns[i].getElementsByTagName('g');
+        for (j = 0; j < columnCells.length; j++) {
+            columnCellsObject[columnId] = columnCells;
+        }
+    }
+    for (i = 1; i < allColumnPositions.length; i++) {
+        columnId = ((i + 1) * spacing);
+        precedingColumnId = (i * spacing);
+        // console.log('current column (' + columnObject[columnId].id + ') has ' + columnCellsObject[columnId].length + ' texts and preceding column (' + columnObject[precedingColumnId].id + ') has ' + columnCellsObject[precedingColumnId].length + ' texts');
+    }
 }
 function eraseLines() {
     // someday this will be easier: http://red-team-design.com/removing-an-element-with-plain-javascript-remove-method/
