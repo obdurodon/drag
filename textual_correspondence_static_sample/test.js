@@ -35,6 +35,7 @@ function startMove(evt) {
     }
 }
 function endMove(evt) {
+    evt.preventDefault();
     console.log('ending');
     window.removeEventListener('mousemove', moveIt, false);
     window.removeEventListener('mouseup', endMove, false);
@@ -50,7 +51,7 @@ function endMove(evt) {
             newG.setAttribute('transform', 'translate(' + allColumnPositions[i] + ')')
         }
     }
-    //drawLines();
+    drawLines();
     var lines = document.getElementsByTagName('line');
     for (var i = 0; i < lines.length; i++) {
         lines[i].style.stroke = 'black';
