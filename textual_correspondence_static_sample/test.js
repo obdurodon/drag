@@ -9,8 +9,11 @@
 function startMove(evt) {
     //global variable, used by moveIt()
     mouseStartX = evt.clientX;
-    //svg has no concept of z height, so replace with clone at end of sequence to avoid losing focus
-    //also global, so that it can be tracked even when the mouse races ahead
+    /*
+     * svg has no concept of z height, so replace with clone at end of element sequence to avoid
+     *   losing focus by becoming hidden by later elements
+     * global, so that it can be tracked even when the mouse races ahead
+     */
     newG = this.parentNode.cloneNode(true);
     //target is <image> child of column, so need to move up two generations
     this.parentNode.parentNode.appendChild(newG);
@@ -32,6 +35,7 @@ function startMove(evt) {
     }
 }
 function endMove(evt) {
+    console.log('ending');
     window.removeEventListener('mousemove', moveIt, false);
     window.removeEventListener('mouseup', endMove, false);
     var landingPos = parseInt(newG.getAttribute('transform').slice(10, -1));
@@ -46,7 +50,7 @@ function endMove(evt) {
             newG.setAttribute('transform', 'translate(' + allColumnPositions[i] + ')')
         }
     }
-    drawLines();
+    //drawLines();
     var lines = document.getElementsByTagName('line');
     for (var i = 0; i < lines.length; i++) {
         lines[i].style.stroke = 'black';
@@ -99,6 +103,7 @@ function swapColumns(side, mousePos) {
 }
 function drawLines() {
     //columnsObject[columnXPos][title] returns cellYpos
+    //SVG text objects have a .textContent property, but no .innerHTML
     var columns = document.getElementsByClassName('draggable');
     var columnHeight = columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('height');
     var columnMidHeight = columnHeight / 2;
@@ -109,7 +114,7 @@ function drawLines() {
         columnsObject[columnXPos] = new Object();
         var columnCells = columns[i].getElementsByTagName('g');
         for (var j = 0; j < columnCells.length; j++) {
-            var cellText = columnCells[j].getElementsByTagName('text')[0].innerHTML;
+            var cellText = columnCells[j].getElementsByTagName('text')[0].textContent;
             var cellYPos = columnCells[j].getElementsByTagName('rect')[0].getAttribute('y');
             columnsObject[columnXPos][cellText] = cellYPos;
         }
@@ -121,8 +126,7 @@ function drawLines() {
         currentCol = columnsObject[allColumnPositions[i]];
         precedingCol = columnsObject[allColumnPositions[i - 1]];
         for (var key in currentCol) {
-            console.log('key = ' + key + ' which is ' + precedingCol.hasOwnProperty(key));
-            if (precedingCol.hasOwnProperty(key)) {
+            if (undefined != precedingCol && precedingCol.hasOwnProperty(key)) {
                 var x1 = allColumnPositions[i];
                 var y1 = parseInt(currentCol[key]) + parseInt(columnMidHeight);
                 var x2 = parseInt(allColumnPositions[i - 1]) + parseInt(columnWidth);
@@ -132,9 +136,9 @@ function drawLines() {
                 newLine.setAttribute('y1', y1);
                 newLine.setAttribute('x2', x2);
                 newLine.setAttribute('y2', y2);
-                newLine.setAttribute('stroke', 'darkgray');
+                // newLine.setAttribute('stroke', 'darkgray');
                 newLine.setAttribute('stroke-width', 2);
-                topG.appendChild(newLine);
+                console.log(topG.appendChild(newLine));
             }
         }
     }
