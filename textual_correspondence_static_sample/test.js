@@ -21,11 +21,11 @@ function startMove(evt) {
     window.addEventListener('mousemove', moveIt, false);
     window.addEventListener('mouseup', endMove, false);
     var lines = document.getElementsByTagName('line');
-    for (i = 0; i < lines.length; i++) {
+    for (var i = 0; i < lines.length; i++) {
         lines[i].style.stroke = 'lightgray';
     }
     var columns = document.getElementsByClassName('draggable');
-    for (i = 0; i < columns.length; i++) {
+    for (var i = 0; i < columns.length; i++) {
         if (columns[i] !== newG) {
             columns[i].style.opacity = '.5';
         }
@@ -37,21 +37,21 @@ function endMove(evt) {
     var landingPos = parseInt(newG.getAttribute('transform').slice(10, -1));
     var columns = document.getElementsByClassName('draggable');
     var allNewColumnPositions =[];
-    for (i = 0; i < columns.length; i++) {
+    for (var i = 0; i < columns.length; i++) {
         allNewColumnPositions.push(parseInt(columns[i].getAttribute('transform').slice(10, -1)));
     }
     // numerical array sorting at http://www.w3schools.com/jsref/jsref_sort.asp
-    for (i = 0; i < allColumnPositions.length; i++) {
+    for (var i = 0; i < allColumnPositions.length; i++) {
         if (allNewColumnPositions.indexOf(allColumnPositions[i]) == -1) {
             newG.setAttribute('transform', 'translate(' + allColumnPositions[i] + ')')
         }
     }
     drawLines();
     var lines = document.getElementsByTagName('line');
-    for (i = 0; i < lines.length; i++) {
+    for (var i = 0; i < lines.length; i++) {
         lines[i].style.stroke = 'black';
     }
-    for (i = 0; i < columns.length; i++) {
+    for (var i = 0; i < columns.length; i++) {
         columns[i].style.opacity = '1';
     }
     newG = null;
@@ -95,23 +95,48 @@ function swapColumns(side, mousePos) {
             }
         }
     }
+    drawLines();
 }
 function drawLines() {
+    //columnsObject[columnXPos][title] returns cellYpos
     var columns = document.getElementsByClassName('draggable');
-    var columnObject = new Object();
-    var columnCellsObject = new Object();
-    for (i = 0; i < columns.length; i++) {
-        columnId = columns[i].getAttribute('transform').slice(10, -1);
-        columnObject[columnId] = columns[i];
+    var columnHeight = columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('height');
+    var columnMidHeight = columnHeight / 2;
+    var columnWidth = columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('width');
+    var columnsObject = new Object();
+    for (var i = 0; i < columns.length; i++) {
+        var columnXPos = columns[i].getAttribute('transform').slice(10, -1);
+        columnsObject[columnXPos] = new Object();
         var columnCells = columns[i].getElementsByTagName('g');
-        for (j = 0; j < columnCells.length; j++) {
-            columnCellsObject[columnId] = columnCells;
+        for (var j = 0; j < columnCells.length; j++) {
+            var cellText = columnCells[j].getElementsByTagName('text')[0].innerHTML;
+            var cellYPos = columnCells[j].getElementsByTagName('rect')[0].getAttribute('y');
+            columnsObject[columnXPos][cellText] = cellYPos;
         }
     }
-    for (i = 1; i < allColumnPositions.length; i++) {
-        columnId = ((i + 1) * spacing);
-        precedingColumnId = (i * spacing);
-        // console.log('current column (' + columnObject[columnId].id + ') has ' + columnCellsObject[columnId].length + ' texts and preceding column (' + columnObject[precedingColumnId].id + ') has ' + columnCellsObject[precedingColumnId].length + ' texts');
+    //draw lines right to left starting with second column (from i to i-1)
+    //objects don't have length, but length of myObj is Object.keys(myObj).length
+    var topG = document.getElementsByTagName('svg')[0].getElementsByTagName('g')[0];
+    for (var i = 1; i < allColumnPositions.length; i++) {
+        currentCol = columnsObject[allColumnPositions[i]];
+        precedingCol = columnsObject[allColumnPositions[i - 1]];
+        for (var key in currentCol) {
+            console.log('key = ' + key + ' which is ' + precedingCol.hasOwnProperty(key));
+            if (precedingCol.hasOwnProperty(key)) {
+                var x1 = allColumnPositions[i];
+                var y1 = parseInt(currentCol[key]) + parseInt(columnMidHeight);
+                var x2 = parseInt(allColumnPositions[i - 1]) + parseInt(columnWidth);
+                var y2 = parseInt(precedingCol[key]) + parseInt(columnMidHeight);
+                newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                newLine.setAttribute('x1', x1);
+                newLine.setAttribute('y1', y1);
+                newLine.setAttribute('x2', x2);
+                newLine.setAttribute('y2', y2);
+                newLine.setAttribute('stroke', 'darkgray');
+                newLine.setAttribute('stroke-width', 2);
+                topG.appendChild(newLine);
+            }
+        }
     }
 }
 function eraseLines() {
