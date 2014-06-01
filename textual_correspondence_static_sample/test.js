@@ -137,7 +137,7 @@ function drawLines() {
                 newLine.setAttribute('y1', y1);
                 newLine.setAttribute('x2', x2);
                 newLine.setAttribute('y2', y2);
-                // newLine.setAttribute('stroke', 'darkgray');
+                newLine.setAttribute('stroke', 'darkgray');
                 newLine.setAttribute('stroke-width', 2);
                 console.log(topG.appendChild(newLine));
             }
