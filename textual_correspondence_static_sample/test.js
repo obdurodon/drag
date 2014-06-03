@@ -3,9 +3,20 @@
  * Developer: David J. Birnbaum, djbpitt@gmail.com http://www.obdurodon.org
  * Project: http://repertorium.obdurodon.org
  * Date: First version 2014-05-30
+ * Last revised: 2014-06-03
+ * 
+ * drag and drop based on http://dl.dropboxusercontent.com/u/169269/group_drag.svg
+ * see also http://www.codedread.com/dragtest2.svg
+ * 
+ * To do:
+ * 
+ * Stretch lines
+ * Don't redraw objects that don't need to be redrawn
+ * Get rid of globals: http://www.w3.org/wiki/JavaScript_best_practices#Avoid_globals
+ * General cleanup
+ * use strict
+ * Optimize for faster performance in Firefox
  */
-// drag and drop based on http://dl.dropboxusercontent.com/u/169269/group_drag.svg
-// see also http://www.codedread.com/dragtest2.svg
 function startMove(evt) {
     //global variable, used by moveIt()
     mouseStartX = evt.clientX;
