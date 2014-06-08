@@ -3,6 +3,7 @@
  * Developer: David J. Birnbaum, djbpitt@gmail.com http://www.obdurodon.org
  * Project: http://repertorium.obdurodon.org
  * Date: First version 2014-05-30
+ *
  */
 // drag and drop based on http://dl.dropboxusercontent.com/u/169269/group_drag.svg
 // see also http://www.codedread.com/dragtest2.svg
@@ -15,6 +16,7 @@ function startMove(evt) {
      * global, so that it can be tracked even when the mouse races ahead
      */
     newG = this.parentNode.cloneNode(true);
+    newG.oldX = parseInt(newG.getAttribute('transform').slice(10, -1));
     //target is <image> child of column, so need to move up two generations
     this.parentNode.parentNode.appendChild(newG);
     this.parentNode.parentNode.removeChild(this.parentNode);
@@ -36,7 +38,7 @@ function startMove(evt) {
 }
 function endMove(evt) {
     evt.preventDefault();
-    console.log('ending');
+    //console.log('ending');
     window.removeEventListener('mousemove', moveIt, false);
     window.removeEventListener('mouseup', endMove, false);
     var landingPos = parseInt(newG.getAttribute('transform').slice(10, -1));
@@ -51,7 +53,7 @@ function endMove(evt) {
             newG.setAttribute('transform', 'translate(' + allColumnPositions[i] + ')')
         }
     }
-    drawLines();
+    //drawLines();
     var lines = document.getElementsByTagName('line');
     for (var i = 0; i < lines.length; i++) {
         lines[i].style.stroke = 'black';
@@ -65,6 +67,7 @@ function moveIt(evt) {
     var oldObjectX = newG.getAttribute('transform').slice(10, -1);
     var newObjectX = parseInt(oldObjectX) + evt.clientX - mouseStartX;
     newG.setAttribute('transform', 'translate(' + newObjectX + ')');
+    stretchLines();
     // global variable, initialized in startMove()
     mouseStartX = evt.clientX;
     if (newObjectX < objectX - spacing && newObjectX != '0') {
@@ -78,6 +81,8 @@ function swapColumns(side, mousePos) {
     var newObjectX = parseInt(newG.getAttribute('transform').slice(10, -1));
     var columns = document.getElementsByClassName('draggable');
     if (side == 'left') {
+        newG.oldX = newG.oldX - spacing;
+        console.log('shifted newG left; newG.oldX = ' + newG.oldX);
         for (var i = 0;
         i < columns.length;
         i++) {
@@ -89,6 +94,8 @@ function swapColumns(side, mousePos) {
             }
         }
     } else if (side == 'right') {
+        newG.oldX = newG.oldX + spacing;
+        console.log('shifted newG left; newG.oldX = ' + newG.oldX);
         for (var i = 0;
         i < columns.length;
         i++) {
@@ -124,8 +131,8 @@ function drawLines() {
     //objects don't have length, but length of myObj is Object.keys(myObj).length
     var topG = document.getElementsByTagName('svg')[0].getElementsByTagName('g')[0];
     for (var i = 1; i < allColumnPositions.length; i++) {
-        currentCol = columnsObject[allColumnPositions[i]];
-        precedingCol = columnsObject[allColumnPositions[i - 1]];
+        var currentCol = columnsObject[allColumnPositions[i]];
+        var precedingCol = columnsObject[allColumnPositions[i - 1]];
         for (var key in currentCol) {
             if (undefined != precedingCol && precedingCol.hasOwnProperty(key)) {
                 var x1 = allColumnPositions[i];
@@ -139,8 +146,30 @@ function drawLines() {
                 newLine.setAttribute('y2', y2);
                 newLine.setAttribute('stroke', 'darkgray');
                 newLine.setAttribute('stroke-width', 2);
-                console.log(topG.appendChild(newLine));
+                topG.appendChild(newLine);
             }
+        }
+    }
+}
+function stretchLines() {
+    var wrapperTransform = document.getElementsByTagName('svg')[0].firstElementChild.getAttribute('transform').slice(10, -1);
+    var columns = document.getElementsByClassName('draggable');
+    var columnWidth = parseInt(columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('width'));
+    var lines = document.getElementsByTagName('line');
+    var newGX = parseInt(newG.getAttribute('transform').slice(10, -1));
+    var lines = document.getElementsByTagName('line');
+    for (var i = 0; i < lines.length; i++) {
+        var x1 = lines[i].getAttribute('x1');
+        var x2 = lines[i].getAttribute('x2');
+        console.log('x1: ' + x1 + ' x2:' + x2 + ' newGX:' + newGX + ' newG.oldX:' + newG.oldX + ' spacing:'+ spacing + ' columnWidth:' + columnWidth + ' (newG.oldX-spacing+columnWidth):' + (newG.oldX - spacing + columnWidth - 1));
+        if (x1 == newG.oldX + spacing) {
+            // attached on the right
+            // console.log('right: ' + newG.oldX);
+            lines[i].setAttribute('x2', newGX + columnWidth);
+        } else if (x2 == (newG.oldX - spacing + columnWidth)) {
+            // attached on the left
+            // console.log('left:' + newG.oldX);
+            lines[i].setAttribute('x1', newGX);
         }
     }
 }
@@ -155,6 +184,14 @@ function eraseLines() {
     }
 }
 function plectogram_init() {
+    //http://stackoverflow.com/questions/1187518/javascript-array-difference
+    // [1,2,3,4,5,6].diff( [3,4,5] );
+    // returns: [1, 2, 6]
+    Array.prototype.diff = function (a) {
+        return this.filter(function (i) {
+            return a.indexOf(i) < 0;
+        });
+    };
     var images = document.getElementsByTagName('image');
     for (var i = 0;
     i < images.length;
