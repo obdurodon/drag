@@ -53,7 +53,8 @@ function endMove(evt) {
             newG.setAttribute('transform', 'translate(' + allColumnPositions[i] + ')')
         }
     }
-    //drawLines();
+    eraseLines();
+    drawLines();
     var lines = document.getElementsByTagName('line');
     for (var i = 0; i < lines.length; i++) {
         lines[i].style.stroke = 'black';
@@ -78,11 +79,28 @@ function moveIt(evt) {
 }
 function swapColumns(side, mousePos) {
     eraseLines();
-    var newObjectX = parseInt(newG.getAttribute('transform').slice(10, -1));
+    /**
+     * get properties of newG for drawing column and lines, and build object for lines
+     */
     var columns = document.getElementsByClassName('draggable');
+    var newObjectX = parseInt(newG.getAttribute('transform').slice(10, -1));
+    var columnHeight = newG.getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('height');
+    var columnMidHeight = columnHeight / 2;
+    var columnWidth = newG.getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('width');
+    var linesG = document.getElementById('lines');
+    var newGItems = newG.getElementsByTagName('g');
+    var newGObject = new Object();
+    var columnCells = newG.getElementsByTagName('g');
+    for (var l = 0; l < columnCells.length; l++) {
+        var cellText = columnCells[l].getElementsByTagName('text')[0].textContent;
+        var cellYPos = columnCells[l].getElementsByTagName('rect')[0].getAttribute('y');
+        newGObject[cellText] = cellYPos;
+    }
+    /**/
     if (side == 'left') {
+        // Swap newG with its old left neighbor
         newG.oldX = newG.oldX - spacing;
-        console.log('shifted newG left; newG.oldX = ' + newG.oldX);
+        //console.log('shifted newG left; newG.oldX = ' + newG.oldX);
         for (var i = 0;
         i < columns.length;
         i++) {
@@ -93,9 +111,92 @@ function swapColumns(side, mousePos) {
                 break;
             }
         }
+        /**
+         * Find right neighbor, position, and object with contents
+         */
+        var rightNeighbor = columns[i];
+        var rightNeighborX = rightNeighbor.getAttribute('transform').slice(10, -1);
+        var rightNeighborItems = rightNeighbor.getElementsByTagName('g');
+        var rightNeighborObject = new Object();
+        var columnCells = rightNeighbor.getElementsByTagName('g');
+        for (var j = 0; j < columnCells.length; j++) {
+            var cellText = columnCells[j].getElementsByTagName('text')[0].textContent;
+            var cellYPos = columnCells[j].getElementsByTagName('rect')[0].getAttribute('y');
+            rightNeighborObject[cellText] = cellYPos;
+        }
+        /**
+         * Use the right neighbor position to find the left
+         * var columns holds all draggable objects, which won't have changed, but their order changes
+         */
+        var leftNeighborX = rightNeighborX - (2 * spacing);
+        if (leftNeighborX == 0) {
+            var leftNeighbor = null;
+        } else { for (var i = 0; i < columns.length; i++) {
+                temp = columns[i].getAttribute('transform').slice(10, -1);
+                if (temp == leftNeighborX) {
+                    var leftNeighbor = columns[i];
+                    var leftNeighborObject = new Object();
+                    var columnCells = leftNeighbor.getElementsByTagName('g');
+                    for (var j = 0; j < columnCells.length; j++) {
+                        var cellText = columnCells[j].getElementsByTagName('text')[0].textContent;
+                        var cellYPos = columnCells[j].getElementsByTagName('rect')[0].getAttribute('y');
+                        leftNeighborObject[cellText] = cellYPos;
+                    }
+                }
+            }
+        }
+        //console.log('leftNeighbor = ' + leftNeighbor + ' at ' + leftNeighborX);
+        //console.log('rightNeighbor = ' + rightNeighbor + ' at ' + rightNeighborX);
+        //console.log('newG.oldX = ' + newG.oldX);
+        /**
+         * If there is a leftNeighbor, draw lines
+         */
+        if (leftNeighbor) {
+            for (var key in newGObject) {
+                if (leftNeighborObject.hasOwnProperty(key)) {
+                    var x2 = (parseInt(leftNeighborX) + parseInt(columnWidth));
+                    var y2 = (parseInt(leftNeighborObject[key]) + columnMidHeight);
+                    var x1 = (newObjectX);
+                    var y1 = (parseInt(newGObject[key]) + columnMidHeight);
+                    newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    newLine.setAttribute('x1', x1);
+                    newLine.setAttribute('y1', y1);
+                    newLine.setAttribute('x2', x2);
+                    newLine.setAttribute('y2', y2);
+                    newLine.setAttribute('stroke', 'darkgray');
+                    newLine.setAttribute('stroke-width', 2);
+                    linesG.appendChild(newLine);
+                    console.log('leftNeighbor: x1 = ' + x1 + '; x2 = ' + x2 + ' y1 = ' + y1 + ' y2 = ' + y2);
+                }
+            }
+        }
+        /**
+         * If there is a rightNeighbor, draw lines
+         */
+        if (rightNeighbor) {
+            for (var key in newGObject) {
+                if (rightNeighborObject.hasOwnProperty(key)) {
+                    //console.log('hit: rightNeighborObject[key] = ' + rightNeighborObject[key] + ' and newGObject[key] = ' + newGObject[key]);
+                    var x1 = rightNeighborX;
+                    var y1 = (parseInt(rightNeighborObject[key]) + columnMidHeight);
+                    var x2 = (newObjectX - columnWidth);
+                    var y2 = (parseInt(newGObject[key]) + columnMidHeight);
+                    newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    newLine.setAttribute('x1', x1);
+                    newLine.setAttribute('y1', y1);
+                    newLine.setAttribute('x2', x2);
+                    newLine.setAttribute('y2', y2);
+                    newLine.setAttribute('stroke', 'darkgray');
+                    newLine.setAttribute('stroke-width', 2);
+                    linesG.appendChild(newLine);
+                    //console.log('x1 = ' + x1 + '; x2 = ' + x2 + ' y1 = ' + y1 + ' y2 = ' + y2);
+                }
+            }
+        }
     } else if (side == 'right') {
+        // Swap newG with its old right neighbor
         newG.oldX = newG.oldX + spacing;
-        console.log('shifted newG left; newG.oldX = ' + newG.oldX);
+        // console.log('shifted newG right; newG.oldX = ' + newG.oldX);
         for (var i = 0;
         i < columns.length;
         i++) {
@@ -108,6 +209,7 @@ function swapColumns(side, mousePos) {
         }
     }
     drawLines();
+    // drawLines() only draws lines for non-moving colums, so do newG separately
 }
 function drawLines() {
     //columnsObject[columnXPos][title] returns cellYpos
@@ -161,7 +263,6 @@ function stretchLines() {
     for (var i = 0; i < lines.length; i++) {
         var x1 = lines[i].getAttribute('x1');
         var x2 = lines[i].getAttribute('x2');
-        console.log('x1: ' + x1 + ' x2:' + x2 + ' newGX:' + newGX + ' newG.oldX:' + newG.oldX + ' spacing:'+ spacing + ' columnWidth:' + columnWidth + ' (newG.oldX-spacing+columnWidth):' + (newG.oldX - spacing + columnWidth - 1));
         if (x1 == newG.oldX + spacing) {
             // attached on the right
             // console.log('right: ' + newG.oldX);
