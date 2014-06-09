@@ -242,7 +242,7 @@ function swapColumns(side, mousePos) {
                 }
             }
         }
-        console.log('leftNeighbor = ' + leftNeighbor + ' at ' + leftNeighborX + ' rightNeighbor = ' + rightNeighbor + ' at ' + rightNeighborX);
+        // console.log('leftNeighbor = ' + leftNeighbor + ' at ' + leftNeighborX + ' rightNeighbor = ' + rightNeighbor + ' at ' + rightNeighborX);
         /**
          * If there is a leftNeighbor, draw lines
          */
@@ -280,6 +280,7 @@ function swapColumns(side, mousePos) {
                     newLine.setAttribute('y2', y2);
                     newLine.setAttribute('stroke', 'darkgray');
                     newLine.setAttribute('stroke-width', 2);
+                    console.log('linesG: ' + linesG);
                     linesG.appendChild(newLine);
                     //console.log('x1 = ' + x1 + '; x2 = ' + x2 + ' y1 = ' + y1 + ' y2 = ' + y2);
                 }
@@ -309,7 +310,7 @@ function drawLines() {
     }
     //draw lines right to left starting with second column (from i to i-1)
     //objects don't have length, but length of myObj is Object.keys(myObj).length
-    var topG = document.getElementsByTagName('svg')[0].getElementsByTagName('g')[0];
+    var linesG = document.getElementById('lines');
     for (var i = 1; i < allColumnPositions.length; i++) {
         var currentCol = columnsObject[allColumnPositions[i]];
         var precedingCol = columnsObject[allColumnPositions[i - 1]];
@@ -326,7 +327,7 @@ function drawLines() {
                 newLine.setAttribute('y2', y2);
                 newLine.setAttribute('stroke', 'darkgray');
                 newLine.setAttribute('stroke-width', 2);
-                topG.appendChild(newLine);
+                linesG.appendChild(newLine);
             }
         }
     }
