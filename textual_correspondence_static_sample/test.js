@@ -38,7 +38,7 @@ var djb = (function() {
         },
         assignEventListeners: function(g) {
             // other listeners are on window, so that they can be trapped when the mouse races ahead
-            g.getElementsByTagName('image')[0].addEventListener('mousedown', startMove, false);
+            g.getElementsByTagName('image')[0].addEventListener('mousedown', djb.startMove, false);
             window.addEventListener('mousemove', moveIt, false);
             window.addEventListener('mouseup', endMove, false);    
         },
@@ -59,11 +59,47 @@ var djb = (function() {
             image.parentNode.parentNode.appendChild(djb.newG);
             image.parentNode.parentNode.removeChild(image.parentNode);
         },
+        eraseLines: function() {
+            // someday this will be easier: http://red-team-design.com/removing-an-element-with-plain-javascript-remove-method/
+            // must work backwards: http://stackoverflow.com/questions/1457544/javascript-loop-only-applying-to-every-other-element
+            var lines = document.getElementsByTagName('line');
+            for (var i = lines.length - 1; i >= 0; i--) {
+                lines[i].parentNode.removeChild(lines[i]);
+            }
+        },
         getXpos: function(g){
             return parseInt(g.getAttribute('transform').slice(10,-1));
         },
         htmlToArray: function(htmlCollection) {
             return Array.prototype.slice.call( htmlCollection );
+        },
+        startMove: function(evt) {
+            // global variable, used by moveIt()
+            djb.mouseStartX = evt.clientX;
+            /*
+             * clone clicked <g> into djb.newG and attach event listeners
+             * svg has no concept of z height, so replace with clone at end of element sequence to avoid
+             *   losing focus by becoming hidden by later elements
+             */
+            djb.createNewG(this); //image element that was clicked is the hook
+            // djb.objectX is global, records starting position of drag
+            djb.objectX = djb.getXpos(djb.newG);
+            djb.assignEventListeners(djb.newG);
+            djb.adjustLinesAndColumns('fade');
+        },
+        stretchLines: function() {
+            var columns = document.getElementsByClassName('draggable');
+            var newGX = djb.getXpos(djb.newG);
+            var lines = document.getElementsByTagName('line');
+            for (var i = 0; i < lines.length; i++) {
+                var x1 = lines[i].getAttribute('x1');
+                var x2 = lines[i].getAttribute('x2');
+                if (x1 == djb.newG.oldX + djb.spacing) {
+                    lines[i].setAttribute('x2', newGX + djb.columnWidth);
+                } else if (x2 == (djb.newG.oldX - djb.spacing + djb.columnWidth)) {
+                    lines[i].setAttribute('x1', newGX);
+                }
+            }
         },
         columnsHTML: document.getElementsByClassName('draggable'),
         dummy: null
@@ -93,7 +129,7 @@ function plectogram_init() {
     };
     var images = document.getElementsByTagName('image');
     for (var i = 0; i < images.length; i++) {
-        images[i].addEventListener('mousedown', startMove, false);
+        images[i].addEventListener('mousedown', djb.startMove, false);
     }
 }
 /**
@@ -103,20 +139,6 @@ function plectogram_init() {
  *   assignEventListeners()
  *   fadeLinesandColumns()
  */
-function startMove(evt) {
-    // global variable, used by moveIt()
-    djb.mouseStartX = evt.clientX;
-    /*
-     * clone clicked <g> into djb.newG and attach event listeners
-     * svg has no concept of z height, so replace with clone at end of element sequence to avoid
-     *   losing focus by becoming hidden by later elements
-     */
-    djb.createNewG(this); //image element that was clicked is the hook
-    // djb.objectX is global, records starting position of drag
-    djb.objectX = djb.getXpos(djb.newG);
-    djb.assignEventListeners(djb.newG);
-    djb.adjustLinesAndColumns('fade');
-}
 function endMove(evt) {
     evt.preventDefault();
     window.removeEventListener('mousemove', moveIt, false);
@@ -132,7 +154,7 @@ function endMove(evt) {
             djb.newG.setAttribute('transform', 'translate(' + djb.initialColumnPositions[i] + ')')
         }
     }
-    eraseLines();
+    djb.eraseLines();
     drawLines();
     djb.adjustLinesAndColumns('restore');
     djb.newG = null;
@@ -141,7 +163,7 @@ function moveIt(evt) {
     var oldObjectX = djb.getXpos(djb.newG);
     var newObjectX = oldObjectX + evt.clientX - djb.mouseStartX;
     djb.newG.setAttribute('transform', 'translate(' + newObjectX + ')');
-    stretchLines();
+    djb.stretchLines();
     djb.mouseStartX = evt.clientX;
     if (newObjectX < djb.objectX - djb.spacing && newObjectX != '0') {
         swapColumns('left', evt.clientX);
@@ -150,7 +172,7 @@ function moveIt(evt) {
     }
 }
 function swapColumns(side, mousePos) {
-    eraseLines();
+    djb.eraseLines();
     /**
      * get properties of djb.newG for drawing column and lines, and build object for lines
      */
@@ -380,25 +402,4 @@ function drawLines() {
         }
     }
 }
-function stretchLines() {
-    var columns = document.getElementsByClassName('draggable');
-    var newGX = djb.getXpos(djb.newG);
-    var lines = document.getElementsByTagName('line');
-    for (var i = 0; i < lines.length; i++) {
-        var x1 = lines[i].getAttribute('x1');
-        var x2 = lines[i].getAttribute('x2');
-        if (x1 == djb.newG.oldX + djb.spacing) {
-            lines[i].setAttribute('x2', newGX + djb.columnWidth);
-        } else if (x2 == (djb.newG.oldX - djb.spacing + djb.columnWidth)) {
-            lines[i].setAttribute('x1', newGX);
-        }
-    }
-}
-function eraseLines() {
-    // someday this will be easier: http://red-team-design.com/removing-an-element-with-plain-javascript-remove-method/
-    // must work backwards: http://stackoverflow.com/questions/1457544/javascript-loop-only-applying-to-every-other-element
-    var lines = document.getElementsByTagName('line');
-    for (var i = lines.length - 1; i >= 0; i--) {
-        lines[i].parentNode.removeChild(lines[i]);
-    }
-}
+
