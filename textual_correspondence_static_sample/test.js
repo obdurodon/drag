@@ -8,18 +8,60 @@
  * see also http://www.codedread.com/dragtest2.svg
  */
 window.addEventListener('load', plectogram_init, false);
+window.addEventListener('load', plectogram_init_new, false);
 /**
  * initializes globals
  */
 var djb = (function() {
     return {
-        testprop: 'test property',
-        testprop1: 'test property 1',
-        testfunc: function(name){
-            console.log('Ahoy, ' + name);
-        }
+        getXpos: function(g){
+            return parseInt(g.getAttribute('transform').slice(10,-1));
+        },
+        htmlToArray: function(htmlCollection) {
+            return Array.prototype.slice.call( htmlCollection );
+        },
+        columnsHTML: document.getElementsByClassName('draggable'),
+        dummy: null
     }
 }());
+function plectogram_init_new() {
+    djb.columns = djb.htmlToArray(djb.columnsHTML);
+    djb.columnHeight = parseInt(djb.columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('height'));
+    djb.columnMidHeight = djb.columnHeight / 2;
+    djb.columnWidth = parseInt(djb.columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('width'));
+    djb.initialColumnPositions = new Array;
+    for (var i = 0; i < djb.columns.length; i++) {
+        djb.initialColumnPositions.push(djb.getXpos(djb.columns[i]));
+    }
+}
+
+function plectogram_init() {
+    //http://stackoverflow.com/questions/1187518/javascript-array-difference
+    // [1,2,3,4,5,6].diff( [3,4,5] );
+    // returns: [1, 2, 6]
+    Array.prototype.diff = function (a) {
+        return this.filter(function (i) {
+            return a.indexOf(i) < 0;
+        });
+    };
+    var images = document.getElementsByTagName('image');
+    for (var i = 0;
+    i < images.length;
+    i++) {
+        images[i].addEventListener('mousedown', startMove, false);
+    }
+    //Intercolumn distance (global variable "spacing") used to determine when columns have crossed
+    //allColumnPositions is used find vacant column to position target at mouseup
+    var columns = document.getElementsByClassName('draggable');
+    spacing = parseInt(columns[1].getAttribute('transform').slice(10, -1)) - parseInt(columns[0].getAttribute('transform').slice(10, -1));
+    allColumnPositions =[];
+    for (var i = 0;
+    i < columns.length;
+    i++) {
+        allColumnPositions.push((i + 1) * spacing);
+    }
+    farRight = spacing * parseInt(document.getElementsByClassName('draggable').length);
+}
 /**
  * fires on mousedown
  */
@@ -32,7 +74,8 @@ function startMove(evt) {
      * global, so that it can be tracked even when the mouse races ahead
      */
     newG = this.parentNode.cloneNode(true);
-    newG.oldX = parseInt(newG.getAttribute('transform').slice(10, -1));
+    newG.oldX = djb.getXpos(newG);
+    console.log('newG.oldX = ' + newG.oldX);
     //target is <image> child of column, so need to move up two generations
     this.parentNode.parentNode.appendChild(newG);
     this.parentNode.parentNode.removeChild(this.parentNode);
@@ -57,11 +100,11 @@ function endMove(evt) {
     //console.log('ending');
     window.removeEventListener('mousemove', moveIt, false);
     window.removeEventListener('mouseup', endMove, false);
-    var landingPos = parseInt(newG.getAttribute('transform').slice(10, -1));
+    var landingPos = djb.getXpos(newG);
     var columns = document.getElementsByClassName('draggable');
     var allNewColumnPositions =[];
     for (var i = 0; i < columns.length; i++) {
-        allNewColumnPositions.push(parseInt(columns[i].getAttribute('transform').slice(10, -1)));
+        allNewColumnPositions.push(djb.getXpos(columns[i]));
     }
     // numerical array sorting at http://www.w3schools.com/jsref/jsref_sort.asp
     for (var i = 0; i < allColumnPositions.length; i++) {
@@ -99,7 +142,7 @@ function swapColumns(side, mousePos) {
      * get properties of newG for drawing column and lines, and build object for lines
      */
     var columns = document.getElementsByClassName('draggable');
-    var newObjectX = parseInt(newG.getAttribute('transform').slice(10, -1));
+    var newObjectX = djb.getXpos(newG);
     var columnHeight = newG.getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('height');
     var columnMidHeight = columnHeight / 2;
     var columnWidth = newG.getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('width');
@@ -378,31 +421,4 @@ function eraseLines() {
     i--) {
         lines[i].parentNode.removeChild(lines[i]);
     }
-}
-function plectogram_init() {
-    //http://stackoverflow.com/questions/1187518/javascript-array-difference
-    // [1,2,3,4,5,6].diff( [3,4,5] );
-    // returns: [1, 2, 6]
-    Array.prototype.diff = function (a) {
-        return this.filter(function (i) {
-            return a.indexOf(i) < 0;
-        });
-    };
-    var images = document.getElementsByTagName('image');
-    for (var i = 0;
-    i < images.length;
-    i++) {
-        images[i].addEventListener('mousedown', startMove, false);
-    }
-    //Intercolumn distance (global variable "spacing") used to determine when columns have crossed
-    //allColumnPositions is used find vacant column to position target at mouseup
-    var columns = document.getElementsByClassName('draggable');
-    spacing = parseInt(columns[1].getAttribute('transform').slice(10, -1)) - parseInt(columns[0].getAttribute('transform').slice(10, -1));
-    allColumnPositions =[];
-    for (var i = 0;
-    i < columns.length;
-    i++) {
-        allColumnPositions.push((i + 1) * spacing);
-    }
-    farRight = spacing * parseInt(document.getElementsByClassName('draggable').length);
 }
