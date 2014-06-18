@@ -30,9 +30,9 @@ function plectogram_init() {
     djb.columnHeight = parseInt(djb.columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('height'));
     djb.columnMidHeight = djb.columnHeight / 2;
     djb.columnWidth = parseInt(djb.columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('width'));
-    djb.initialColumnPositions = new Array;
+    djb.initialColumnPositions = new Array ();
     for (var i = 0; i < djb.columns.length; i++) {
-        djb.initialColumnPositions.push(parseInt(djb.getXpos(djb.columns[i])));
+        djb.initialColumnPositions.push(djb.getXpos(djb.columns[i]));
     }
     djb.spacing = djb.initialColumnPositions[1] - djb.initialColumnPositions[0];
     djb.farRight = djb.initialColumnPositions[djb.initialColumnPositions.length - 1];
@@ -75,8 +75,19 @@ function startMove(evt) {
 function createNewG(image){
     djb.newG = image.parentNode.cloneNode(true);
     djb.newG.oldX = djb.getXpos(djb.newG);
+    buildDict(djb.newG);
     image.parentNode.parentNode.appendChild(djb.newG);
     image.parentNode.parentNode.removeChild(image.parentNode);
+}
+function buildDict(g){
+    // attach a dictionary to each <g> with text as key and vertical position as value
+    g.contents = new Object();
+    var columnCells = g.getElementsByTagName('g');
+    for (var l = 0; l < columnCells.length; l++) {
+        var cellText = columnCells[l].getElementsByTagName('text')[0].textContent;
+        var cellYPos = columnCells[l].getElementsByTagName('rect')[0].getAttribute('y');
+        g.contents[cellText] = cellYPos;
+    }
 }
 function assignEventListeners() {
     // other listeners are on window, so that they can be trapped when the mouse races ahead
@@ -299,7 +310,6 @@ function swapColumns(side, mousePos) {
                     newLine.setAttribute('stroke', 'darkgray');
                     newLine.setAttribute('stroke-width', 2);
                     linesG.appendChild(newLine);
-                    //console.log('leftNeighbor: x1 = ' + x1 + '; x2 = ' + x2 + ' y1 = ' + y1 + ' y2 = ' + y2);
                 }
             }
         }
@@ -317,7 +327,6 @@ function swapColumns(side, mousePos) {
                     newLine.setAttribute('y2', y2);
                     newLine.setAttribute('stroke', 'darkgray');
                     newLine.setAttribute('stroke-width', 2);
-                    console.log('linesG: ' + linesG);
                     linesG.appendChild(newLine);
                 }
             }
