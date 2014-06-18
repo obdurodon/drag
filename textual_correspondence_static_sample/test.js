@@ -8,7 +8,6 @@
  * see also http://www.codedread.com/dragtest2.svg
  */
 window.addEventListener('load', plectogram_init, false);
-window.addEventListener('load', plectogram_init_new, false);
 /**
  * initializes globals
  */
@@ -24,17 +23,6 @@ var djb = (function() {
         dummy: null
     }
 }());
-function plectogram_init_new() {
-    djb.columns = djb.htmlToArray(djb.columnsHTML);
-    djb.columnHeight = parseInt(djb.columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('height'));
-    djb.columnMidHeight = djb.columnHeight / 2;
-    djb.columnWidth = parseInt(djb.columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('width'));
-    djb.initialColumnPositions = new Array;
-    for (var i = 0; i < djb.columns.length; i++) {
-        djb.initialColumnPositions.push(djb.getXpos(djb.columns[i]));
-    }
-}
-
 function plectogram_init() {
     //http://stackoverflow.com/questions/1187518/javascript-array-difference
     // [1,2,3,4,5,6].diff( [3,4,5] );
@@ -45,22 +33,20 @@ function plectogram_init() {
         });
     };
     var images = document.getElementsByTagName('image');
-    for (var i = 0;
-    i < images.length;
-    i++) {
+    for (var i = 0; i < images.length; i++) {
         images[i].addEventListener('mousedown', startMove, false);
     }
-    //Intercolumn distance (global variable "spacing") used to determine when columns have crossed
-    //allColumnPositions is used find vacant column to position target at mouseup
-    var columns = document.getElementsByClassName('draggable');
-    spacing = parseInt(columns[1].getAttribute('transform').slice(10, -1)) - parseInt(columns[0].getAttribute('transform').slice(10, -1));
-    allColumnPositions =[];
-    for (var i = 0;
-    i < columns.length;
-    i++) {
-        allColumnPositions.push((i + 1) * spacing);
+    djb.columns = djb.htmlToArray(djb.columnsHTML);
+    djb.columnCount = djb.columns.length;
+    djb.columnHeight = parseInt(djb.columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('height'));
+    djb.columnMidHeight = djb.columnHeight / 2;
+    djb.columnWidth = parseInt(djb.columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('width'));
+    djb.initialColumnPositions = new Array;
+    for (var i = 0; i < djb.columns.length; i++) {
+        djb.initialColumnPositions.push(parseInt(djb.getXpos(djb.columns[i])));
     }
-    farRight = spacing * parseInt(document.getElementsByClassName('draggable').length);
+    djb.spacing = djb.initialColumnPositions[1] - djb.initialColumnPositions[0];
+    djb.farRight = djb.initialColumnPositions[djb.initialColumnPositions.length - 1];
 }
 /**
  * fires on mousedown
@@ -75,12 +61,11 @@ function startMove(evt) {
      */
     newG = this.parentNode.cloneNode(true);
     newG.oldX = djb.getXpos(newG);
-    console.log('newG.oldX = ' + newG.oldX);
     //target is <image> child of column, so need to move up two generations
     this.parentNode.parentNode.appendChild(newG);
     this.parentNode.parentNode.removeChild(this.parentNode);
     //objectX is global, records starting position of drag
-    objectX = parseInt(newG.getAttribute('transform').slice(10, -1));
+    objectX = djb.getXpos(newG);
     newG.getElementsByTagName('image')[0].addEventListener('mousedown', startMove, false);
     window.addEventListener('mousemove', moveIt, false);
     window.addEventListener('mouseup', endMove, false);
@@ -89,7 +74,7 @@ function startMove(evt) {
         lines[i].style.stroke = 'lightgray';
     }
     var columns = document.getElementsByClassName('draggable');
-    for (var i = 0; i < columns.length; i++) {
+    for (var i = 0; i < djb.columnCount; i++) {
         if (columns[i] !== newG) {
             columns[i].style.opacity = '.5';
         }
@@ -103,13 +88,13 @@ function endMove(evt) {
     var landingPos = djb.getXpos(newG);
     var columns = document.getElementsByClassName('draggable');
     var allNewColumnPositions =[];
-    for (var i = 0; i < columns.length; i++) {
+    for (var i = 0; i < djb.columnCount; i++) {
         allNewColumnPositions.push(djb.getXpos(columns[i]));
     }
     // numerical array sorting at http://www.w3schools.com/jsref/jsref_sort.asp
-    for (var i = 0; i < allColumnPositions.length; i++) {
-        if (allNewColumnPositions.indexOf(allColumnPositions[i]) == -1) {
-            newG.setAttribute('transform', 'translate(' + allColumnPositions[i] + ')')
+    for (var i = 0; i < djb.columnCount; i++) {
+        if (allNewColumnPositions.indexOf(djb.initialColumnPositions[i]) == -1) {
+            newG.setAttribute('transform', 'translate(' + djb.initialColumnPositions[i] + ')')
         }
     }
     eraseLines();
@@ -124,15 +109,16 @@ function endMove(evt) {
     newG = null;
 }
 function moveIt(evt) {
-    var oldObjectX = newG.getAttribute('transform').slice(10, -1);
+    //var oldObjectX = newG.getAttribute('transform').slice(10, -1);
+    var oldObjectX = djb.getXpos(newG);
     var newObjectX = parseInt(oldObjectX) + evt.clientX - mouseStartX;
     newG.setAttribute('transform', 'translate(' + newObjectX + ')');
     stretchLines();
     // global variable, initialized in startMove()
     mouseStartX = evt.clientX;
-    if (newObjectX < objectX - spacing && newObjectX != '0') {
+    if (newObjectX < objectX - djb.spacing && newObjectX != '0') {
         swapColumns('left', evt.clientX);
-    } else if (newObjectX > objectX + spacing && objectX != farRight) {
+    } else if (newObjectX > objectX + djb.spacing && objectX != djb.farRight) {
         swapColumns('right', evt.clientX);
     }
 }
@@ -143,9 +129,6 @@ function swapColumns(side, mousePos) {
      */
     var columns = document.getElementsByClassName('draggable');
     var newObjectX = djb.getXpos(newG);
-    var columnHeight = newG.getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('height');
-    var columnMidHeight = columnHeight / 2;
-    var columnWidth = newG.getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('width');
     var linesG = document.getElementById('lines');
     var newGItems = newG.getElementsByTagName('g');
     var newGObject = new Object();
@@ -158,15 +141,12 @@ function swapColumns(side, mousePos) {
     /**/
     if (side == 'left') {
         // Swap newG with its old left neighbor
-        newG.oldX = newG.oldX - spacing;
-        //console.log('shifted newG left; newG.oldX = ' + newG.oldX);
-        for (var i = 0;
-        i < columns.length;
-        i++) {
-            var neighborPos = parseInt(columns[i].getAttribute('transform').slice(10, -1));
-            if (neighborPos == objectX - spacing) {
+        newG.oldX = newG.oldX - djb.spacing;
+        for (var i = 0; i < columns.length; i++) {
+            var neighborPos = djb.getXpos(columns[i]);
+            if (neighborPos == objectX - djb.spacing) {
                 columns[i].setAttribute('transform', 'translate(' + objectX + ')');
-                objectX = objectX - spacing;
+                objectX = objectX - djb.spacing;
                 break;
             }
         }
@@ -174,7 +154,7 @@ function swapColumns(side, mousePos) {
          * Find right neighbor, position, and object with contents
          */
         var rightNeighbor = columns[i];
-        var rightNeighborX = rightNeighbor.getAttribute('transform').slice(10, -1);
+        var rightNeighborX = djb.getXpos(rightNeighbor);
         var rightNeighborItems = rightNeighbor.getElementsByTagName('g');
         var rightNeighborObject = new Object();
         var columnCells = rightNeighbor.getElementsByTagName('g');
@@ -187,11 +167,11 @@ function swapColumns(side, mousePos) {
          * Use the right neighbor position to find the left
          * var columns holds all draggable objects, which won't have changed, but their order changes
          */
-        var leftNeighborX = rightNeighborX - (2 * spacing);
+        var leftNeighborX = rightNeighborX - (2 * djb.spacing);
         if (leftNeighborX == 0) {
             var leftNeighbor = null;
         } else { for (var i = 0; i < columns.length; i++) {
-                temp = columns[i].getAttribute('transform').slice(10, -1);
+            temp = djb.getXpos(columns[i]);
                 if (temp == leftNeighborX) {
                     var leftNeighbor = columns[i];
                     var leftNeighborObject = new Object();
@@ -204,19 +184,16 @@ function swapColumns(side, mousePos) {
                 }
             }
         }
-        //console.log('leftNeighbor = ' + leftNeighbor + ' at ' + leftNeighborX);
-        //console.log('rightNeighbor = ' + rightNeighbor + ' at ' + rightNeighborX);
-        //console.log('newG.oldX = ' + newG.oldX);
         /**
          * If there is a leftNeighbor, draw lines
          */
         if (leftNeighbor) {
             for (var key in newGObject) {
                 if (leftNeighborObject.hasOwnProperty(key)) {
-                    var x2 = (parseInt(leftNeighborX) + parseInt(columnWidth));
-                    var y2 = (parseInt(leftNeighborObject[key]) + columnMidHeight);
+                    var x2 = (parseInt(leftNeighborX) + djb.columnWidth);
+                    var y2 = (parseInt(leftNeighborObject[key]) + djb.columnMidHeight);
                     var x1 = (newObjectX);
-                    var y1 = (parseInt(newGObject[key]) + columnMidHeight);
+                    var y1 = (parseInt(newGObject[key]) + djb.columnMidHeight);
                     newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                     newLine.setAttribute('x1', x1);
                     newLine.setAttribute('y1', y1);
@@ -225,7 +202,6 @@ function swapColumns(side, mousePos) {
                     newLine.setAttribute('stroke', 'darkgray');
                     newLine.setAttribute('stroke-width', 2);
                     linesG.appendChild(newLine);
-                    //console.log('leftNeighbor: x1 = ' + x1 + '; x2 = ' + x2 + ' y1 = ' + y1 + ' y2 = ' + y2);
                 }
             }
         }
@@ -235,11 +211,10 @@ function swapColumns(side, mousePos) {
         if (rightNeighbor) {
             for (var key in newGObject) {
                 if (rightNeighborObject.hasOwnProperty(key)) {
-                    //console.log('hit: rightNeighborObject[key] = ' + rightNeighborObject[key] + ' and newGObject[key] = ' + newGObject[key]);
                     var x1 = rightNeighborX;
-                    var y1 = (parseInt(rightNeighborObject[key]) + columnMidHeight);
-                    var x2 = (newObjectX - columnWidth);
-                    var y2 = (parseInt(newGObject[key]) + columnMidHeight);
+                    var y1 = (parseInt(rightNeighborObject[key]) + djb.columnMidHeight);
+                    var x2 = (newObjectX - djb.columnWidth);
+                    var y2 = (parseInt(newGObject[key]) + djb.columnMidHeight);
                     newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                     newLine.setAttribute('x1', x1);
                     newLine.setAttribute('y1', y1);
@@ -254,15 +229,12 @@ function swapColumns(side, mousePos) {
         }
     } else if (side == 'right') {
         // Swap newG with its old right neighbor
-        newG.oldX = newG.oldX + spacing;
-        // console.log('shifted newG right; newG.oldX = ' + newG.oldX);
-        for (var i = 0;
-        i < columns.length;
-        i++) {
-            var neighborPos = parseInt(columns[i].getAttribute('transform').slice(10, -1));
-            if (neighborPos == objectX + spacing) {
+        newG.oldX = newG.oldX + djb.spacing;
+        for (var i = 0; i < columns.length; i++) {
+            var neighborPos = djb.getXpos(columns[i]);
+            if (neighborPos == objectX + djb.spacing) {
                 columns[i].setAttribute('transform', 'translate(' + objectX + ')');
-                objectX = objectX + spacing;
+                objectX = objectX + djb.spacing;
                 break;
             }
         }
@@ -270,7 +242,7 @@ function swapColumns(side, mousePos) {
          * Find left neighbor, position, and object with contents
          */
         var leftNeighbor = columns[i];
-        var leftNeighborX = leftNeighbor.getAttribute('transform').slice(10, -1);
+        var leftNeighborX = djb.getXpos(leftNeighbor);
         var leftNeighborItems = leftNeighbor.getElementsByTagName('g');
         var leftNeighborObject = new Object();
         var columnCells = leftNeighbor.getElementsByTagName('g');
@@ -284,11 +256,12 @@ function swapColumns(side, mousePos) {
          * Use the left neighbor position to find the right
          * var columns holds all draggable objects, which won't have changed, but their order changes
          */
-        var rightNeighborX = parseInt(leftNeighborX) + (2 * spacing);
-        if (rightNeighborX > farRight) {
+        var rightNeighborX = parseInt(leftNeighborX) + (2 * djb.spacing);
+        if (rightNeighborX > djb.farRight) {
             var rightNeighbor = null;
-        } else { for (var i = 0; i < columns.length; i++) {
-                temp = columns[i].getAttribute('transform').slice(10, -1);
+        } else { 
+            for (var i = 0; i < columns.length; i++) {
+                temp = djb.getXpos(columns[i]);
                 if (temp == rightNeighborX) {
                     var rightNeighbor = columns[i];
                     var rightNeighborObject = new Object();
@@ -301,17 +274,16 @@ function swapColumns(side, mousePos) {
                 }
             }
         }
-        // console.log('leftNeighbor = ' + leftNeighbor + ' at ' + leftNeighborX + ' rightNeighbor = ' + rightNeighbor + ' at ' + rightNeighborX);
         /**
          * If there is a leftNeighbor, draw lines
          */
         if (leftNeighbor) {
             for (var key in newGObject) {
                 if (leftNeighborObject.hasOwnProperty(key)) {
-                    var x2 = (parseInt(leftNeighborX) + parseInt(columnWidth));
-                    var y2 = (parseInt(leftNeighborObject[key]) + columnMidHeight);
+                    var x2 = (parseInt(leftNeighborX) + djb.columnWidth);
+                    var y2 = (parseInt(leftNeighborObject[key]) + djb.columnMidHeight);
                     var x1 = (newObjectX);
-                    var y1 = (parseInt(newGObject[key]) + columnMidHeight);
+                    var y1 = (parseInt(newGObject[key]) + djb.columnMidHeight);
                     newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                     newLine.setAttribute('x1', x1);
                     newLine.setAttribute('y1', y1);
@@ -327,11 +299,10 @@ function swapColumns(side, mousePos) {
         if (rightNeighbor) {
             for (var key in newGObject) {
                 if (rightNeighborObject.hasOwnProperty(key)) {
-                    //console.log('hit: rightNeighborObject[key] = ' + rightNeighborObject[key] + ' and newGObject[key] = ' + newGObject[key]);
                     var x1 = rightNeighborX;
-                    var y1 = (parseInt(rightNeighborObject[key]) + columnMidHeight);
-                    var x2 = (newObjectX - columnWidth);
-                    var y2 = (parseInt(newGObject[key]) + columnMidHeight);
+                    var y1 = (parseInt(rightNeighborObject[key]) + djb.columnMidHeight);
+                    var x2 = (newObjectX - djb.columnWidth);
+                    var y2 = (parseInt(newGObject[key]) + djb.columnMidHeight);
                     newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                     newLine.setAttribute('x1', x1);
                     newLine.setAttribute('y1', y1);
@@ -341,7 +312,6 @@ function swapColumns(side, mousePos) {
                     newLine.setAttribute('stroke-width', 2);
                     console.log('linesG: ' + linesG);
                     linesG.appendChild(newLine);
-                    //console.log('x1 = ' + x1 + '; x2 = ' + x2 + ' y1 = ' + y1 + ' y2 = ' + y2);
                 }
             }
         }
@@ -353,12 +323,9 @@ function drawLines() {
     //columnsObject[columnXPos][title] returns cellYpos
     //SVG text objects have a .textContent property, but no .innerHTML
     var columns = document.getElementsByClassName('draggable');
-    var columnHeight = columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('height');
-    var columnMidHeight = columnHeight / 2;
-    var columnWidth = columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('width');
     var columnsObject = new Object();
     for (var i = 0; i < columns.length; i++) {
-        var columnXPos = columns[i].getAttribute('transform').slice(10, -1);
+        var columnXPos = djb.getXpos(columns[i]);
         columnsObject[columnXPos] = new Object();
         var columnCells = columns[i].getElementsByTagName('g');
         for (var j = 0; j < columnCells.length; j++) {
@@ -370,15 +337,15 @@ function drawLines() {
     //draw lines right to left starting with second column (from i to i-1)
     //objects don't have length, but length of myObj is Object.keys(myObj).length
     var linesG = document.getElementById('lines');
-    for (var i = 1; i < allColumnPositions.length; i++) {
-        var currentCol = columnsObject[allColumnPositions[i]];
-        var precedingCol = columnsObject[allColumnPositions[i - 1]];
+    for (var i = 1; i < djb.columnCount; i++) {
+        var currentCol = columnsObject[djb.initialColumnPositions[i]];
+        var precedingCol = columnsObject[djb.initialColumnPositions[i - 1]];
         for (var key in currentCol) {
             if (undefined != precedingCol && precedingCol.hasOwnProperty(key)) {
-                var x1 = allColumnPositions[i];
-                var y1 = parseInt(currentCol[key]) + parseInt(columnMidHeight);
-                var x2 = parseInt(allColumnPositions[i - 1]) + parseInt(columnWidth);
-                var y2 = parseInt(precedingCol[key]) + parseInt(columnMidHeight);
+                var x1 = djb.initialColumnPositions[i];
+                var y1 = parseInt(currentCol[key]) + djb.columnMidHeight;
+                var x2 = parseInt(djb.initialColumnPositions[i - 1]) + djb.columnWidth;
+                var y2 = parseInt(precedingCol[key]) + djb.columnMidHeight;
                 newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 newLine.setAttribute('x1', x1);
                 newLine.setAttribute('y1', y1);
@@ -392,22 +359,16 @@ function drawLines() {
     }
 }
 function stretchLines() {
-    var wrapperTransform = document.getElementsByTagName('svg')[0].firstElementChild.getAttribute('transform').slice(10, -1);
     var columns = document.getElementsByClassName('draggable');
-    var columnWidth = parseInt(columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('width'));
     var lines = document.getElementsByTagName('line');
-    var newGX = parseInt(newG.getAttribute('transform').slice(10, -1));
+    var newGX = djb.getXpos(newG);
     var lines = document.getElementsByTagName('line');
     for (var i = 0; i < lines.length; i++) {
         var x1 = lines[i].getAttribute('x1');
         var x2 = lines[i].getAttribute('x2');
-        if (x1 == newG.oldX + spacing) {
-            // attached on the right
-            // console.log('right: ' + newG.oldX);
-            lines[i].setAttribute('x2', newGX + columnWidth);
-        } else if (x2 == (newG.oldX - spacing + columnWidth)) {
-            // attached on the left
-            // console.log('left:' + newG.oldX);
+        if (x1 == newG.oldX + djb.spacing) {
+            lines[i].setAttribute('x2', newGX + djb.columnWidth);
+        } else if (x2 == (newG.oldX - djb.spacing + djb.columnWidth)) {
             lines[i].setAttribute('x1', newGX);
         }
     }
@@ -416,9 +377,7 @@ function eraseLines() {
     // someday this will be easier: http://red-team-design.com/removing-an-element-with-plain-javascript-remove-method/
     // must work backwards: http://stackoverflow.com/questions/1457544/javascript-loop-only-applying-to-every-other-element
     var lines = document.getElementsByTagName('line');
-    for (var i = lines.length - 1;
-    i >= 0;
-    i--) {
+    for (var i = lines.length - 1; i >= 0; i--) {
         lines[i].parentNode.removeChild(lines[i]);
     }
 }
