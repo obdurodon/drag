@@ -24,18 +24,6 @@ var djb = (function() {
     }
 }());
 function plectogram_init() {
-    //http://stackoverflow.com/questions/1187518/javascript-array-difference
-    // [1,2,3,4,5,6].diff( [3,4,5] );
-    // returns: [1, 2, 6]
-    Array.prototype.diff = function (a) {
-        return this.filter(function (i) {
-            return a.indexOf(i) < 0;
-        });
-    };
-    var images = document.getElementsByTagName('image');
-    for (var i = 0; i < images.length; i++) {
-        images[i].addEventListener('mousedown', startMove, false);
-    }
     djb.columns = djb.htmlToArray(djb.columnsHTML);
     djb.columnCount = djb.columns.length;
     djb.columnHeight = parseInt(djb.columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('height'));
@@ -48,28 +36,47 @@ function plectogram_init() {
     djb.spacing = djb.initialColumnPositions[1] - djb.initialColumnPositions[0];
     djb.farRight = djb.initialColumnPositions[djb.initialColumnPositions.length - 1];
     djb.newG = null;
+    djb.mouseStartX = null;
+    //http://stackoverflow.com/questions/1187518/javascript-array-difference
+    // [1,2,3,4,5,6].diff( [3,4,5] );
+    // returns: [1, 2, 6]
+    Array.prototype.diff = function (a) {
+        return this.filter(function (i) {
+            return a.indexOf(i) < 0;
+        });
+    };
+    var images = document.getElementsByTagName('image');
+    for (var i = 0; i < images.length; i++) {
+        images[i].addEventListener('mousedown', startMove, false);
+    }
 }
 /**
  * fires on mousedown
  */
 function startMove(evt) {
     //global variable, used by moveIt()
-    mouseStartX = evt.clientX;
+    djb.mouseStartX = evt.clientX;
     /*
+     * clone clicked <g> into djb.newG and attach event listeners
      * svg has no concept of z height, so replace with clone at end of element sequence to avoid
      *   losing focus by becoming hidden by later elements
-     * global, so that it can be tracked even when the mouse races ahead
+     * other listeners are on window, so that they can be trapped when the mouse races ahead
      */
-    djb.newG = this.parentNode.cloneNode(true);
-    djb.newG.oldX = djb.getXpos(djb.newG);
-    //target is <image> child of column, so need to move up two generations
-    this.parentNode.parentNode.appendChild(djb.newG);
-    this.parentNode.parentNode.removeChild(this.parentNode);
-    //objectX is global, records starting position of drag
-    objectX = djb.getXpos(djb.newG);
+    createNewG(this); //image element that was clicked is the hook
     djb.newG.getElementsByTagName('image')[0].addEventListener('mousedown', startMove, false);
     window.addEventListener('mousemove', moveIt, false);
     window.addEventListener('mouseup', endMove, false);
+    //objectX is global, records starting position of drag
+    objectX = djb.getXpos(djb.newG);
+    fadeLinesAndColumns();
+}
+function createNewG(image){
+    djb.newG = image.parentNode.cloneNode(true);
+    djb.newG.oldX = djb.getXpos(djb.newG);
+    image.parentNode.parentNode.appendChild(djb.newG);
+    image.parentNode.parentNode.removeChild(image.parentNode);
+}
+function fadeLinesAndColumns() {
     var lines = document.getElementsByTagName('line');
     for (var i = 0; i < lines.length; i++) {
         lines[i].style.stroke = 'lightgray';
@@ -79,7 +86,7 @@ function startMove(evt) {
         if (columns[i] !== djb.newG) {
             columns[i].style.opacity = '.5';
         }
-    }
+    }   
 }
 function endMove(evt) {
     evt.preventDefault();
@@ -111,11 +118,10 @@ function endMove(evt) {
 }
 function moveIt(evt) {
     var oldObjectX = djb.getXpos(djb.newG);
-    var newObjectX = parseInt(oldObjectX) + evt.clientX - mouseStartX;
+    var newObjectX = parseInt(oldObjectX) + evt.clientX - djb.mouseStartX;
     djb.newG.setAttribute('transform', 'translate(' + newObjectX + ')');
     stretchLines();
-    // global variable, initialized in startMove()
-    mouseStartX = evt.clientX;
+    djb.mouseStartX = evt.clientX;
     if (newObjectX < objectX - djb.spacing && newObjectX != '0') {
         swapColumns('left', evt.clientX);
     } else if (newObjectX > objectX + djb.spacing && objectX != djb.farRight) {
