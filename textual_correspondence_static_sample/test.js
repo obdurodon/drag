@@ -11,9 +11,54 @@
 window.addEventListener('load', plectogram_init, false);
 /**
  * initialize globals in djb namespace object
+ *
+ * adjustLinesAndColumns(): turns lines and columns gray or black
+ * assignEventListeners(): djb.newG responds to mousedown; window monitors mousemove and mouseup
+ * buildDict(): column property, an object with text titles as keys and y positions as values
+ * createNewG(): clones the <g> where the <image> was clicked to move it to a higher z position
+ * getXPos(): retrieves X position of column from @transform "translate()" value
+ * htmlToArray(): makes HTML collection easier to handle
  */
 var djb = (function() {
     return {
+        adjustLinesAndColumns: function(how) {
+            // only values should be 'fade' and 'restore'
+            var lines = document.getElementsByTagName('line');
+            var lineColor = how == 'fade' ? 'lightgray' : 'black';
+            var columnOpacity = how == 'fade' ? .5 : 1;
+            for (var i = 0; i < lines.length; i++) {
+                lines[i].style.stroke = lineColor;
+            }
+            var columns = document.getElementsByClassName('draggable');
+            for (var i = 0; i < djb.columnCount; i++) {
+                if (columns[i] !== djb.newG) {
+                    columns[i].style.opacity = columnOpacity;
+                }
+            }   
+        },
+        assignEventListeners: function(g) {
+            // other listeners are on window, so that they can be trapped when the mouse races ahead
+            g.getElementsByTagName('image')[0].addEventListener('mousedown', startMove, false);
+            window.addEventListener('mousemove', moveIt, false);
+            window.addEventListener('mouseup', endMove, false);    
+        },
+        buildDict: function(g) {
+            // attach a dictionary to each <g> with text as key and vertical position as value
+            g.contents = new Object();
+            var columnCells = g.getElementsByTagName('g');
+            for (var l = 0; l < columnCells.length; l++) {
+                var cellText = columnCells[l].getElementsByTagName('text')[0].textContent;
+                var cellYPos = columnCells[l].getElementsByTagName('rect')[0].getAttribute('y');
+                g.contents[cellText] = cellYPos;
+            }
+        },
+        createNewG: function(image) {
+            djb.newG = image.parentNode.cloneNode(true);
+            djb.newG.oldX = djb.getXpos(djb.newG);
+            djb.buildDict(djb.newG);
+            image.parentNode.parentNode.appendChild(djb.newG);
+            image.parentNode.parentNode.removeChild(image.parentNode);
+        },
         getXpos: function(g){
             return parseInt(g.getAttribute('transform').slice(10,-1));
         },
@@ -66,49 +111,11 @@ function startMove(evt) {
      * svg has no concept of z height, so replace with clone at end of element sequence to avoid
      *   losing focus by becoming hidden by later elements
      */
-    createNewG(this); //image element that was clicked is the hook
+    djb.createNewG(this); //image element that was clicked is the hook
     // djb.objectX is global, records starting position of drag
     djb.objectX = djb.getXpos(djb.newG);
-    assignEventListeners();
-    adjustLinesAndColumns('fade');
-}
-function createNewG(image){
-    djb.newG = image.parentNode.cloneNode(true);
-    djb.newG.oldX = djb.getXpos(djb.newG);
-    buildDict(djb.newG);
-    image.parentNode.parentNode.appendChild(djb.newG);
-    image.parentNode.parentNode.removeChild(image.parentNode);
-}
-function buildDict(g){
-    // attach a dictionary to each <g> with text as key and vertical position as value
-    g.contents = new Object();
-    var columnCells = g.getElementsByTagName('g');
-    for (var l = 0; l < columnCells.length; l++) {
-        var cellText = columnCells[l].getElementsByTagName('text')[0].textContent;
-        var cellYPos = columnCells[l].getElementsByTagName('rect')[0].getAttribute('y');
-        g.contents[cellText] = cellYPos;
-    }
-}
-function assignEventListeners() {
-    // other listeners are on window, so that they can be trapped when the mouse races ahead
-    djb.newG.getElementsByTagName('image')[0].addEventListener('mousedown', startMove, false);
-    window.addEventListener('mousemove', moveIt, false);
-    window.addEventListener('mouseup', endMove, false);    
-}
-function adjustLinesAndColumns(how) {
-    // only values should be 'fade' and 'restore'
-    var lines = document.getElementsByTagName('line');
-    var lineColor = how == 'fade' ? 'lightgray' : 'black';
-    var columnOpacity = how == 'fade' ? .5 : 1;
-    for (var i = 0; i < lines.length; i++) {
-        lines[i].style.stroke = lineColor;
-    }
-    var columns = document.getElementsByClassName('draggable');
-    for (var i = 0; i < djb.columnCount; i++) {
-        if (columns[i] !== djb.newG) {
-            columns[i].style.opacity = columnOpacity;
-        }
-    }   
+    djb.assignEventListeners(djb.newG);
+    djb.adjustLinesAndColumns('fade');
 }
 function endMove(evt) {
     evt.preventDefault();
@@ -127,7 +134,7 @@ function endMove(evt) {
     }
     eraseLines();
     drawLines();
-    adjustLinesAndColumns('restore');
+    djb.adjustLinesAndColumns('restore');
     djb.newG = null;
 }
 function moveIt(evt) {
