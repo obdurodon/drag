@@ -7,7 +7,19 @@
  * drag and drop based on http://dl.dropboxusercontent.com/u/169269/group_drag.svg
  * see also http://www.codedread.com/dragtest2.svg
  */
-
+window.addEventListener('load', plectogram_init, false);
+/**
+ * initializes globals
+ */
+var djb = (function() {
+    return {
+        testprop: 'test property',
+        testprop1: 'test property 1',
+        testfunc: function(name){
+            console.log('Ahoy, ' + name);
+        }
+    }
+}());
 /**
  * fires on mousedown
  */
@@ -394,4 +406,3 @@ function plectogram_init() {
     }
     farRight = spacing * parseInt(document.getElementsByClassName('draggable').length);
 }
-window.addEventListener('load', plectogram_init, false);
