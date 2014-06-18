@@ -103,13 +103,12 @@ function endMove(evt) {
     for (var i = 0; i < lines.length; i++) {
         lines[i].style.stroke = 'black';
     }
-    for (var i = 0; i < columns.length; i++) {
+    for (var i = 0; i < djb.columnCount; i++) {
         columns[i].style.opacity = '1';
     }
     newG = null;
 }
 function moveIt(evt) {
-    //var oldObjectX = newG.getAttribute('transform').slice(10, -1);
     var oldObjectX = djb.getXpos(newG);
     var newObjectX = parseInt(oldObjectX) + evt.clientX - mouseStartX;
     newG.setAttribute('transform', 'translate(' + newObjectX + ')');
@@ -142,7 +141,7 @@ function swapColumns(side, mousePos) {
     if (side == 'left') {
         // Swap newG with its old left neighbor
         newG.oldX = newG.oldX - djb.spacing;
-        for (var i = 0; i < columns.length; i++) {
+        for (var i = 0; i < djb.columnCount; i++) {
             var neighborPos = djb.getXpos(columns[i]);
             if (neighborPos == objectX - djb.spacing) {
                 columns[i].setAttribute('transform', 'translate(' + objectX + ')');
@@ -170,7 +169,7 @@ function swapColumns(side, mousePos) {
         var leftNeighborX = rightNeighborX - (2 * djb.spacing);
         if (leftNeighborX == 0) {
             var leftNeighbor = null;
-        } else { for (var i = 0; i < columns.length; i++) {
+        } else { for (var i = 0; i < djb.columnCount; i++) {
             temp = djb.getXpos(columns[i]);
                 if (temp == leftNeighborX) {
                     var leftNeighbor = columns[i];
@@ -230,7 +229,7 @@ function swapColumns(side, mousePos) {
     } else if (side == 'right') {
         // Swap newG with its old right neighbor
         newG.oldX = newG.oldX + djb.spacing;
-        for (var i = 0; i < columns.length; i++) {
+        for (var i = 0; i < djb.columnCount; i++) {
             var neighborPos = djb.getXpos(columns[i]);
             if (neighborPos == objectX + djb.spacing) {
                 columns[i].setAttribute('transform', 'translate(' + objectX + ')');
@@ -260,7 +259,7 @@ function swapColumns(side, mousePos) {
         if (rightNeighborX > djb.farRight) {
             var rightNeighbor = null;
         } else { 
-            for (var i = 0; i < columns.length; i++) {
+            for (var i = 0; i < djb.columnCount; i++) {
                 temp = djb.getXpos(columns[i]);
                 if (temp == rightNeighborX) {
                     var rightNeighbor = columns[i];
@@ -324,7 +323,7 @@ function drawLines() {
     //SVG text objects have a .textContent property, but no .innerHTML
     var columns = document.getElementsByClassName('draggable');
     var columnsObject = new Object();
-    for (var i = 0; i < columns.length; i++) {
+    for (var i = 0; i < djb.columnCount; i++) {
         var columnXPos = djb.getXpos(columns[i]);
         columnsObject[columnXPos] = new Object();
         var columnCells = columns[i].getElementsByTagName('g');
