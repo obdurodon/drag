@@ -7,9 +7,13 @@
  * Last revised: 2014-06-22
  *
  * To do:
- * Wrap initialization in self-executing anonymous function (SEAF) to
- *   bypass addressing the window 'load' event explicitly:
- *   http://code.tutsplus.com/tutorials/key-principles-of-maintainable-javascript--net-25536
+ * js:
+ *   Change getXpos and setXPos from functions on djb to methods on column objects
+ *   Wrap initialization in self-executing anonymous function (SEAF) to
+ *     bypass addressing the window 'load' event explicitly:
+ *     http://code.tutsplus.com/tutorials/key-principles-of-maintainable-javascript--net-25536
+ * xhtml/svg:
+ *   Adjust hierarchy of XQuery output to match mockup markup
  *
  * drag and drop based on http://dl.dropboxusercontent.com/u/169269/group_drag.svg
  * see also http://www.codedread.com/dragtest2.svg
@@ -47,6 +51,9 @@ var djb = djb || function () {
                 var cellYPos = columnCells[i].getElementsByTagName('rect')[0].getAttribute('y');
                 g.contents[cellText] = cellYPos;
             }
+            g.getXPos = function () {
+                return this.getAttribute('transform').slice(10,-1);
+            }
         },
         createNewG: function (image) {
             djb.newG = image.parentNode.cloneNode(true);
@@ -60,7 +67,7 @@ var djb = djb || function () {
             columns = djb.htmlToArray(document.getElementsByClassName('draggable'));
             columns.sort(function (a, b) {
                 return djb.getXpos(a) - djb.getXpos(b)
-            }); // sort by Xpos of column
+            }); // numerical sort by Xpos of column
             linesG = document.getElementById('lines');
             for (i = 1; i < djb.columnCount; i++) {
                 for (key in columns[i].contents) {
@@ -82,6 +89,7 @@ var djb = djb || function () {
                     }
                 }
             }
+            djb.newG.oldX = djb.getXpos(djb.newG);
         },
         endMove: function (evt) {
             evt.preventDefault();
@@ -96,7 +104,7 @@ var djb = djb || function () {
             // numerical array sorting at http://www.w3schools.com/jsref/jsref_sort.asp
             for (i = 0; i < djb.columnCount; i++) {
                 if (allNewColumnPositions.indexOf(djb.initialColumnPositions[i]) == -1) {
-                    djb.newG.setAttribute('transform', 'translate(' + djb.initialColumnPositions[i] + ')')
+                    djb.setXPos(djb.newG, djb.initialColumnPositions[i]);
                 }
             }
             djb.eraseLines();
@@ -121,14 +129,17 @@ var djb = djb || function () {
         moveIt: function (evt) {
             var oldObjectX = djb.getXpos(djb.newG);
             var newObjectX = oldObjectX + evt.clientX - djb.mouseStartX;
-            djb.newG.setAttribute('transform', 'translate(' + newObjectX + ')');
+            djb.setXPos(djb.newG, newObjectX);
             djb.stretchLines();
             djb.mouseStartX = evt.clientX;
             if (newObjectX < djb.objectX - djb.spacing && newObjectX > '0') {
-                swapColumns('left');
+                djb.swapColumns('left');
             } else if (newObjectX > djb.objectX + djb.spacing && djb.objectX < djb.farRight) {
-                swapColumns('right');
+                djb.swapColumns('right');
             }
+        },
+        setXPos: function (g, Xpos) {
+            g.setAttribute('transform', 'translate(' + Xpos + ')');
         },
         startMove: function (evt) {
             // global variable, used by djb.moveIt()
@@ -158,15 +169,23 @@ var djb = djb || function () {
             }
         },
         swapColumns: function (side) {
+            var columns, neighbor;
+            columns = djb.htmlToArray(document.getElementsByClassName('draggable'));
+            columns.sort(function (a, b) {
+                return djb.getXpos(a) - djb.getXpos(b)
+            }); // numerical sort by Xpos of column
+            neighbor = columns[djb.objectX / djb.spacing - 1];
+            if (side == 'left') {
+                djb.objectX = djb.objectX - djb.spacing;
+                djb.setXPos(neighbor, djb.getXpos(neighbor) + djb.spacing);
+                djb.setXPos(djb.newG, djb.objectX);
+            } else {
+                djb.objectX = djb.objectX + djb.spacing;
+                djb.setXPos(neighbor, djb.getXpos(neighbor) - djb.spacing);
+                djb.setXPos(djb.newG, djb.objectX);
+            }
             djb.eraseLines();
-            /**
-             * Erase all lines
-             * Redraw all lines except for djb.newG column
-             * Redraw lines for djb.newG
-             *
-             * To do: Combine redraw to take care of old and new columns
-             * */
-            var columns = document.getElementsByTagName('draggable');
+            djb.drawLines();
         },
         columnsHTML: document.getElementsByClassName('draggable'),
         dummy: null
@@ -194,207 +213,4 @@ function plectogram_init() {
     for (i = 0; i < images.length; i++) {
         images[i].addEventListener('mousedown', djb.startMove, false);
     }
-}
-function swapColumns(side) {
-    var columns, columnCells, neighborPos, cellYPos, cellText, key, linesG, temp,
-        leftNeighbor, leftNeighborObject, leftNeighborX,
-        rightNeighbor, rightNeighborObject, rightNeighborX,
-        newGObject, newObjectX, i,
-        newLine, x1, x2, y1, y2;
-    djb.eraseLines();
-    /**
-     * get properties of djb.newG for drawing column and lines, and build object for lines
-     */
-    columns = document.getElementsByClassName('draggable');
-    newObjectX = djb.getXpos(djb.newG);
-    linesG = document.getElementById('lines');
-    newGObject = {};
-    columnCells = djb.newG.getElementsByTagName('g');
-    for (i = 0; i < columnCells.length; i++) {
-        cellText = columnCells[i].getElementsByTagName('text')[0].textContent;
-        cellYPos = columnCells[i].getElementsByTagName('rect')[0].getAttribute('y');
-        newGObject[cellText] = cellYPos;
-    }
-    if (side == 'left') {
-        // Swap djb.newG with its old left neighbor
-        djb.newG.oldX = djb.newG.oldX - djb.spacing;
-        for (i = 0; i < djb.columnCount; i++) {
-            neighborPos = djb.getXpos(columns[i]);
-            if (neighborPos == djb.objectX - djb.spacing) {
-                columns[i].setAttribute('transform', 'translate(' + djb.objectX + ')');
-                djb.objectX = djb.objectX - djb.spacing;
-                break;
-            }
-        }
-        /**
-         * Find right neighbor, position, and object with contents
-         */
-        rightNeighbor = columns[i];
-        rightNeighborX = djb.getXpos(rightNeighbor);
-        rightNeighborObject = {};
-        columnCells = rightNeighbor.getElementsByTagName('g');
-        for (i = 0; i < columnCells.length; i++) {
-            cellText = columnCells[i].getElementsByTagName('text')[0].textContent;
-            cellYPos = columnCells[i].getElementsByTagName('rect')[0].getAttribute('y');
-            rightNeighborObject[cellText] = cellYPos;
-        }
-        /**
-         * Use the right neighbor position to find the left
-         * var columns holds all draggable objects, which won't have changed, but their order changes
-         */
-        leftNeighborX = rightNeighborX - (2 * djb.spacing);
-        if (leftNeighborX == 0) {
-            leftNeighbor = null;
-        } else {
-            for (i = 0; i < djb.columnCount; i++) {
-                temp = djb.getXpos(columns[i]);
-                if (temp == leftNeighborX) {
-                    leftNeighbor = columns[i];
-                    leftNeighborObject = {};
-                    columnCells = leftNeighbor.getElementsByTagName('g');
-                    for (i = 0; i < columnCells.length; i++) {
-                        cellText = columnCells[i].getElementsByTagName('text')[0].textContent;
-                        cellYPos = columnCells[i].getElementsByTagName('rect')[0].getAttribute('y');
-                        leftNeighborObject[cellText] = cellYPos;
-                    }
-                }
-            }
-        }
-        /**
-         * If there is a leftNeighbor, draw lines
-         */
-        if (leftNeighbor) {
-            for (key in newGObject) {
-                if (newGObject.hasOwnProperty(key)) {
-                    if (leftNeighborObject.hasOwnProperty(key)) {
-                        x2 = (parseInt(leftNeighborX) + djb.columnWidth);
-                        y2 = (parseInt(leftNeighborObject[key]) + djb.columnMidHeight);
-                        x1 = (newObjectX);
-                        y1 = (parseInt(newGObject[key]) + djb.columnMidHeight);
-                        newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                        newLine.setAttribute('x1', x1);
-                        newLine.setAttribute('y1', y1);
-                        newLine.setAttribute('x2', x2);
-                        newLine.setAttribute('y2', y2);
-                        newLine.setAttribute('stroke', 'darkgray');
-                        newLine.setAttribute('stroke-width', '2');
-                        linesG.appendChild(newLine);
-                    }
-                }
-            }
-        }
-        /**
-         * If there is a rightNeighbor, draw lines
-         */
-        if (rightNeighbor) {
-            for (key in newGObject) {
-                if (newGObject.hasOwnProperty(key)) {
-                    if (rightNeighborObject.hasOwnProperty(key)) {
-                        x1 = rightNeighborX;
-                        y1 = (parseInt(rightNeighborObject[key]) + djb.columnMidHeight);
-                        x2 = (newObjectX - djb.columnWidth);
-                        y2 = (parseInt(newGObject[key]) + djb.columnMidHeight);
-                        newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                        newLine.setAttribute('x1', x1.toString());
-                        newLine.setAttribute('y1', y1.toString());
-                        newLine.setAttribute('x2', x2.toString());
-                        newLine.setAttribute('y2', y2.toString());
-                        newLine.setAttribute('stroke', 'darkgray');
-                        newLine.setAttribute('stroke-width', '2');
-                        linesG.appendChild(newLine);
-                    }
-                }
-            }
-        }
-    }
-    else if (side == 'right') {
-        // Swap newG with its old right neighbor
-        djb.newG.oldX = djb.newG.oldX + djb.spacing;
-        for (i = 0; i < djb.columnCount; i++) {
-            neighborPos = djb.getXpos(columns[i]);
-            if (neighborPos == djb.objectX + djb.spacing) {
-                columns[i].setAttribute('transform', 'translate(' + djb.objectX + ')');
-                djb.objectX = djb.objectX + djb.spacing;
-                break;
-            }
-        }
-        /**
-         * Find left neighbor, position, and object with contents
-         */
-        leftNeighbor = columns[i];
-        leftNeighborX = djb.getXpos(leftNeighbor);
-        leftNeighborObject = {};
-        columnCells = leftNeighbor.getElementsByTagName('g');
-        for (i = 0; i < columnCells.length; i++) {
-            cellText = columnCells[i].getElementsByTagName('text')[0].textContent;
-            cellYPos = columnCells[i].getElementsByTagName('rect')[0].getAttribute('y');
-            leftNeighborObject[cellText] = cellYPos;
-        }
-        /**
-         * Use the left neighbor position to find the right
-         * var columns holds all draggable objects, which won't have changed, but their order changes
-         */
-        rightNeighborX = parseInt(leftNeighborX) + (2 * djb.spacing);
-        if (rightNeighborX > djb.farRight) {
-            rightNeighbor = null;
-        } else {
-            for (i = 0; i < djb.columnCount; i++) {
-                temp = djb.getXpos(columns[i]);
-                if (temp == rightNeighborX) {
-                    rightNeighbor = columns[i];
-                    rightNeighborObject = {};
-                    columnCells = rightNeighbor.getElementsByTagName('g');
-                    for (var j = 0; j < columnCells.length; j++) {
-                        cellText = columnCells[j].getElementsByTagName('text')[0].textContent;
-                        cellYPos = columnCells[j].getElementsByTagName('rect')[0].getAttribute('y');
-                        rightNeighborObject[cellText] = cellYPos;
-                    }
-                }
-            }
-        }
-        /**
-         * If there is a leftNeighbor, draw lines
-         */
-        if (leftNeighbor) {
-            for (key in newGObject) {
-                if (newGObject.hasOwnProperty(key)) {
-                    if (leftNeighborObject.hasOwnProperty(key)) {
-                        x2 = (parseInt(leftNeighborX) + djb.columnWidth);
-                        y2 = (parseInt(leftNeighborObject[key]) + djb.columnMidHeight);
-                        x1 = (newObjectX);
-                        y1 = (parseInt(newGObject[key]) + djb.columnMidHeight);
-                        newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                        newLine.setAttribute('x1', x1);
-                        newLine.setAttribute('y1', y1);
-                        newLine.setAttribute('x2', x2);
-                        newLine.setAttribute('y2', y2);
-                        newLine.setAttribute('stroke', 'darkgray');
-                        newLine.setAttribute('stroke-width', '2');
-                        linesG.appendChild(newLine);
-                    }
-                }
-            }
-        }
-        if (rightNeighbor) {
-            for (key in newGObject) {
-                if (newGObject.hasOwnProperty(key)) {
-                    if (rightNeighborObject.hasOwnProperty(key)) {
-                        x1 = rightNeighborX.toString();
-                        y1 = (parseInt(rightNeighborObject[key]) + djb.columnMidHeight).toString();
-                        x2 = (newObjectX - djb.columnWidth).toString();
-                        y2 = (parseInt(newGObject[key]) + djb.columnMidHeight).toString();
-                        newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                        newLine.setAttribute('x1', x1);
-                        newLine.setAttribute('y1', y1);
-                        newLine.setAttribute('x2', x2);
-                        newLine.setAttribute('y2', y2);
-                        newLine.setAttribute('stroke', 'darkgray');
-                        newLine.setAttribute('stroke-width', '2');
-                        linesG.appendChild(newLine);
-                    }
-                }
-            }
-        }
-    }
-    djb.drawLines();
 }
