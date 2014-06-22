@@ -43,6 +43,7 @@ var djb = function () {
         },
         buildDict: function (g) {
             // attach a dictionary to each <g> with text as key and vertical position as value
+            // also adds .getXPos() and .setXPos() methods to <g> object
             g.contents = {};
             var columnCells = g.getElementsByTagName('g');
             for (var i = 0; i < columnCells.length; i++) {
@@ -53,8 +54,8 @@ var djb = function () {
             g.getXPos = function () {
                 return parseInt(this.getAttribute('transform').slice(10, -1));
             };
-            g.setXPos = function(X) {
-                this.setAttribute('transform','translate(' + X + ')');
+            g.setXPos = function (X) {
+                this.setAttribute('transform', 'translate(' + X + ')');
             };
         },
         createNewG: function (image) {
@@ -187,7 +188,6 @@ var djb = function () {
             }
             djb.eraseLines();
             djb.drawLines();
-            
         },
         columnsHTML: document.getElementsByClassName('draggable'),
         dummy: null
