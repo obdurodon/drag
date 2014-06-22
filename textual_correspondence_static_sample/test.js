@@ -8,7 +8,6 @@
  *
  * To do:
  * js:
- *   Change getXpos and setXPos from functions on djb to methods on column objects
  *   Wrap initialization in self-executing anonymous function (SEAF) to
  *     bypass addressing the window 'load' event explicitly:
  *     http://code.tutsplus.com/tutorials/key-principles-of-maintainable-javascript--net-25536
@@ -19,7 +18,7 @@
  * see also http://www.codedread.com/dragtest2.svg
  */
 window.addEventListener('load', plectogram_init, false);
-var djb = djb || function () {
+var djb = function () {
     return {
         adjustLinesAndColumns: function (how) {
             // only values should be 'fade' and 'restore'
@@ -52,13 +51,16 @@ var djb = djb || function () {
                 g.contents[cellText] = cellYPos;
             }
             g.getXPos = function () {
-                return this.getAttribute('transform').slice(10,-1);
-            }
+                return parseInt(this.getAttribute('transform').slice(10, -1));
+            };
+            g.setXPos = function(X) {
+                this.setAttribute('transform','translate(' + X + ')');
+            };
         },
         createNewG: function (image) {
             djb.newG = image.parentNode.cloneNode(true);
-            djb.newG.oldX = djb.getXpos(djb.newG);
             djb.buildDict(djb.newG);
+            djb.newG.oldX = djb.newG.getXPos();
             image.parentNode.parentNode.appendChild(djb.newG);
             image.parentNode.parentNode.removeChild(image.parentNode);
         },
@@ -66,16 +68,17 @@ var djb = djb || function () {
             var columns, key, x1, y1, x2, y2, linesG, newLine, i;
             columns = djb.htmlToArray(document.getElementsByClassName('draggable'));
             columns.sort(function (a, b) {
-                return djb.getXpos(a) - djb.getXpos(b)
+                var result = a.getXPos() - b.getXPos();
+                return (result);
             }); // numerical sort by Xpos of column
             linesG = document.getElementById('lines');
             for (i = 1; i < djb.columnCount; i++) {
                 for (key in columns[i].contents) {
                     if (columns[i].contents.hasOwnProperty(key)) {
                         if (columns[i - 1].contents.hasOwnProperty(key)) {
-                            x1 = djb.getXpos(columns[i]);
+                            x1 = columns[i].getXPos();
                             y1 = parseInt(columns[i].contents[key]) + djb.columnMidHeight;
-                            x2 = djb.getXpos(columns[i - 1]) + djb.columnWidth;
+                            x2 = columns[i - 1].getXPos() + djb.columnWidth;
                             y2 = parseInt(columns[i - 1].contents[key]) + djb.columnMidHeight;
                             newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                             newLine.setAttribute('x1', x1);
@@ -89,7 +92,7 @@ var djb = djb || function () {
                     }
                 }
             }
-            djb.newG.oldX = djb.getXpos(djb.newG);
+            djb.newG.oldX = djb.newG.getXPos();
         },
         endMove: function (evt) {
             evt.preventDefault();
@@ -99,12 +102,12 @@ var djb = djb || function () {
             var columns = document.getElementsByClassName('draggable');
             var allNewColumnPositions = [];
             for (i = 0; i < djb.columnCount; i++) {
-                allNewColumnPositions.push(djb.getXpos(columns[i]));
+                allNewColumnPositions.push(columns[i].getXPos());
             }
             // numerical array sorting at http://www.w3schools.com/jsref/jsref_sort.asp
             for (i = 0; i < djb.columnCount; i++) {
                 if (allNewColumnPositions.indexOf(djb.initialColumnPositions[i]) == -1) {
-                    djb.setXPos(djb.newG, djb.initialColumnPositions[i]);
+                    djb.newG.setXPos(djb.initialColumnPositions[i]);
                 }
             }
             djb.eraseLines();
@@ -120,16 +123,13 @@ var djb = djb || function () {
                 lines[i].parentNode.removeChild(lines[i]);
             }
         },
-        getXpos: function (g) {
-            return parseInt(g.getAttribute('transform').slice(10, -1));
-        },
         htmlToArray: function (htmlCollection) {
             return Array.prototype.slice.call(htmlCollection);
         },
         moveIt: function (evt) {
-            var oldObjectX = djb.getXpos(djb.newG);
+            var oldObjectX = djb.newG.getXPos();
             var newObjectX = oldObjectX + evt.clientX - djb.mouseStartX;
-            djb.setXPos(djb.newG, newObjectX);
+            djb.newG.setXPos(newObjectX);
             djb.stretchLines();
             djb.mouseStartX = evt.clientX;
             if (newObjectX < djb.objectX - djb.spacing && newObjectX > '0') {
@@ -151,12 +151,12 @@ var djb = djb || function () {
              */
             djb.createNewG(this); //image element that was clicked is the hook
             // djb.objectX is global, records starting position of drag
-            djb.objectX = djb.getXpos(djb.newG);
+            djb.objectX = djb.newG.getXPos();
             djb.assignEventListeners(djb.newG);
             djb.adjustLinesAndColumns('fade');
         },
         stretchLines: function () {
-            var newGX = djb.getXpos(djb.newG);
+            var newGX = djb.newG.getXPos();
             var lines = document.getElementsByTagName('line');
             for (var i = 0; i < lines.length; i++) {
                 var x1 = lines[i].getAttribute('x1');
@@ -172,20 +172,22 @@ var djb = djb || function () {
             var columns, neighbor;
             columns = djb.htmlToArray(document.getElementsByClassName('draggable'));
             columns.sort(function (a, b) {
-                return djb.getXpos(a) - djb.getXpos(b)
+                var result = a.getXPos() - b.getXPos();
+                return result;
             }); // numerical sort by Xpos of column
             neighbor = columns[djb.objectX / djb.spacing - 1];
             if (side == 'left') {
                 djb.objectX = djb.objectX - djb.spacing;
-                djb.setXPos(neighbor, djb.getXpos(neighbor) + djb.spacing);
-                djb.setXPos(djb.newG, djb.objectX);
+                neighbor.setXPos(neighbor.getXPos() + djb.spacing);
+                djb.newG.setXPos(djb.objectX);
             } else {
                 djb.objectX = djb.objectX + djb.spacing;
-                djb.setXPos(neighbor, djb.getXpos(neighbor) - djb.spacing);
-                djb.setXPos(djb.newG, djb.objectX);
+                neighbor.setXPos(neighbor.getXPos() - djb.spacing);
+                djb.newG.setXPos(djb.objectX);
             }
             djb.eraseLines();
             djb.drawLines();
+            
         },
         columnsHTML: document.getElementsByClassName('draggable'),
         dummy: null
@@ -203,7 +205,7 @@ function plectogram_init() {
     djb.columnWidth = parseInt(djb.columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('width'));
     djb.initialColumnPositions = [];
     for (i = 0; i < djb.columns.length; i++) {
-        djb.initialColumnPositions.push(djb.getXpos(djb.columns[i]));
+        djb.initialColumnPositions.push(djb.columns[i].getXPos());
     }
     djb.spacing = djb.initialColumnPositions[1] - djb.initialColumnPositions[0];
     djb.farRight = djb.initialColumnPositions[djb.initialColumnPositions.length - 1];
