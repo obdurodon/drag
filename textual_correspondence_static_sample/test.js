@@ -1,3 +1,4 @@
+"use strict";
 /*
  * Synopsis: Drag and drop support for plectograms
  * Developer: David J. Birnbaum, djbpitt@gmail.com http://www.obdurodon.org
@@ -61,41 +62,29 @@ djb = function () {
             image.parentNode.parentNode.removeChild(image.parentNode);
         },
         drawLines: function () {
-            // columnsObject[columnXPos][title] returns cellYpos
-            // SVG text objects have a .textContent property, but no .innerHTML
-            var i, j, key, x1, y1, x2, y2, newLine;
-            var columns = document.getElementsByClassName('draggable');
-            var columnsObject = {};
-            for (i = 0; i < djb.columnCount; i++) {
-                var columnXPos = djb.getXpos(columns[i]);
-                columnsObject[columnXPos] = {};
-                var columnCells = columns[i].getElementsByTagName('g');
-                for (j = 0; j < columnCells.length; j++) {
-                    var cellText = columnCells[j].getElementsByTagName('text')[0].textContent;
-                    var cellYPos = columnCells[j].getElementsByTagName('rect')[0].getAttribute('y');
-                    columnsObject[columnXPos][cellText] = cellYPos;
-                }
-            }
-            // draw lines right to left starting with second column (from i to i-1)
-            // objects don't have length, but length of myObj is Object.keys(myObj).length
-            var linesG = document.getElementById('lines');
+            var columns, key, x1, y1, x2, y2, linesG, newLine, i;
+            columns = djb.htmlToArray(document.getElementsByClassName('draggable'));
+            columns.sort(function (a, b) {
+                return djb.getXpos(a) - djb.getXpos(b)
+            }); // sort by Xpos of column
+            linesG = document.getElementById('lines');
             for (i = 1; i < djb.columnCount; i++) {
-                var currentCol = columnsObject[djb.initialColumnPositions[i]];
-                var precedingCol = columnsObject[djb.initialColumnPositions[i - 1]];
-                for (key in currentCol) {
-                    if (undefined != precedingCol && precedingCol.hasOwnProperty(key)) {
-                        x1 = djb.initialColumnPositions[i];
-                        y1 = parseInt(currentCol[key]) + djb.columnMidHeight;
-                        x2 = parseInt(djb.initialColumnPositions[i - 1]) + djb.columnWidth;
-                        y2 = parseInt(precedingCol[key]) + djb.columnMidHeight;
-                        newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                        newLine.setAttribute('x1', x1);
-                        newLine.setAttribute('y1', y1);
-                        newLine.setAttribute('x2', x2);
-                        newLine.setAttribute('y2', y2);
-                        newLine.setAttribute('stroke', 'darkgray');
-                        newLine.setAttribute('stroke-width', '2');
-                        linesG.appendChild(newLine);
+                for (key in columns[i].contents) {
+                    if (columns[i].contents.hasOwnProperty(key)) {
+                        if (columns[i - 1].contents.hasOwnProperty(key)) {
+                            x1 = djb.getXpos(columns[i]);
+                            y1 = parseInt(columns[i].contents[key]) + djb.columnMidHeight;
+                            x2 = djb.getXpos(columns[i - 1]) + djb.columnWidth;
+                            y2 = parseInt(columns[i - 1].contents[key]) + djb.columnMidHeight;
+                            newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                            newLine.setAttribute('x1', x1);
+                            newLine.setAttribute('y1', y1);
+                            newLine.setAttribute('x2', x2);
+                            newLine.setAttribute('y2', y2);
+                            newLine.setAttribute('stroke', 'darkgray');
+                            newLine.setAttribute('stroke-width', '2');
+                            linesG.appendChild(newLine);
+                        }
                     }
                 }
             }
@@ -183,6 +172,7 @@ djb = function () {
              *
              * To do: Combine redraw to take care of old and new columns
              * */
+            var columns = document.getElementsByTagName('draggable');
         },
         columnsHTML: document.getElementsByClassName('draggable'),
         dummy: null
@@ -191,6 +181,9 @@ djb = function () {
 function plectogram_init() {
     var images, i;
     djb.columns = djb.htmlToArray(djb.columnsHTML);
+    for (i = 0; i < djb.columns.length; i++) {
+        djb.buildDict(djb.columns[i]);
+    }
     djb.columnCount = djb.columns.length;
     djb.columnHeight = parseInt(djb.columns[0].getElementsByTagName('g')[0].getElementsByTagName('rect')[0].getAttribute('height'));
     djb.columnMidHeight = djb.columnHeight / 2;
@@ -278,19 +271,21 @@ function swapColumns(side) {
          */
         if (leftNeighbor) {
             for (key in newGObject) {
-                if (leftNeighborObject.hasOwnProperty(key)) {
-                    x2 = (parseInt(leftNeighborX) + djb.columnWidth);
-                    y2 = (parseInt(leftNeighborObject[key]) + djb.columnMidHeight);
-                    x1 = (newObjectX);
-                    y1 = (parseInt(newGObject[key]) + djb.columnMidHeight);
-                    newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    newLine.setAttribute('x1', x1);
-                    newLine.setAttribute('y1', y1);
-                    newLine.setAttribute('x2', x2);
-                    newLine.setAttribute('y2', y2);
-                    newLine.setAttribute('stroke', 'darkgray');
-                    newLine.setAttribute('stroke-width', '2');
-                    linesG.appendChild(newLine);
+                if (newGObject.hasOwnProperty(key)) {
+                    if (leftNeighborObject.hasOwnProperty(key)) {
+                        x2 = (parseInt(leftNeighborX) + djb.columnWidth);
+                        y2 = (parseInt(leftNeighborObject[key]) + djb.columnMidHeight);
+                        x1 = (newObjectX);
+                        y1 = (parseInt(newGObject[key]) + djb.columnMidHeight);
+                        newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        newLine.setAttribute('x1', x1);
+                        newLine.setAttribute('y1', y1);
+                        newLine.setAttribute('x2', x2);
+                        newLine.setAttribute('y2', y2);
+                        newLine.setAttribute('stroke', 'darkgray');
+                        newLine.setAttribute('stroke-width', '2');
+                        linesG.appendChild(newLine);
+                    }
                 }
             }
         }
@@ -299,23 +294,26 @@ function swapColumns(side) {
          */
         if (rightNeighbor) {
             for (key in newGObject) {
-                if (rightNeighborObject.hasOwnProperty(key)) {
-                    x1 = rightNeighborX;
-                    y1 = (parseInt(rightNeighborObject[key]) + djb.columnMidHeight);
-                    x2 = (newObjectX - djb.columnWidth);
-                    y2 = (parseInt(newGObject[key]) + djb.columnMidHeight);
-                    newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    newLine.setAttribute('x1', x1.toString());
-                    newLine.setAttribute('y1', y1.toString());
-                    newLine.setAttribute('x2', x2.toString());
-                    newLine.setAttribute('y2', y2.toString());
-                    newLine.setAttribute('stroke', 'darkgray');
-                    newLine.setAttribute('stroke-width', '2');
-                    linesG.appendChild(newLine);
+                if (newGObject.hasOwnProperty(key)) {
+                    if (rightNeighborObject.hasOwnProperty(key)) {
+                        x1 = rightNeighborX;
+                        y1 = (parseInt(rightNeighborObject[key]) + djb.columnMidHeight);
+                        x2 = (newObjectX - djb.columnWidth);
+                        y2 = (parseInt(newGObject[key]) + djb.columnMidHeight);
+                        newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        newLine.setAttribute('x1', x1.toString());
+                        newLine.setAttribute('y1', y1.toString());
+                        newLine.setAttribute('x2', x2.toString());
+                        newLine.setAttribute('y2', y2.toString());
+                        newLine.setAttribute('stroke', 'darkgray');
+                        newLine.setAttribute('stroke-width', '2');
+                        linesG.appendChild(newLine);
+                    }
                 }
             }
         }
-    } else if (side == 'right') {
+    }
+    else if (side == 'right') {
         // Swap newG with its old right neighbor
         djb.newG.oldX = djb.newG.oldX + djb.spacing;
         for (i = 0; i < djb.columnCount; i++) {
@@ -365,37 +363,41 @@ function swapColumns(side) {
          */
         if (leftNeighbor) {
             for (key in newGObject) {
-                if (leftNeighborObject.hasOwnProperty(key)) {
-                    x2 = (parseInt(leftNeighborX) + djb.columnWidth);
-                    y2 = (parseInt(leftNeighborObject[key]) + djb.columnMidHeight);
-                    x1 = (newObjectX);
-                    y1 = (parseInt(newGObject[key]) + djb.columnMidHeight);
-                    newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    newLine.setAttribute('x1', x1);
-                    newLine.setAttribute('y1', y1);
-                    newLine.setAttribute('x2', x2);
-                    newLine.setAttribute('y2', y2);
-                    newLine.setAttribute('stroke', 'darkgray');
-                    newLine.setAttribute('stroke-width', '2');
-                    linesG.appendChild(newLine);
+                if (newGObject.hasOwnProperty(key)) {
+                    if (leftNeighborObject.hasOwnProperty(key)) {
+                        x2 = (parseInt(leftNeighborX) + djb.columnWidth);
+                        y2 = (parseInt(leftNeighborObject[key]) + djb.columnMidHeight);
+                        x1 = (newObjectX);
+                        y1 = (parseInt(newGObject[key]) + djb.columnMidHeight);
+                        newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        newLine.setAttribute('x1', x1);
+                        newLine.setAttribute('y1', y1);
+                        newLine.setAttribute('x2', x2);
+                        newLine.setAttribute('y2', y2);
+                        newLine.setAttribute('stroke', 'darkgray');
+                        newLine.setAttribute('stroke-width', '2');
+                        linesG.appendChild(newLine);
+                    }
                 }
             }
         }
         if (rightNeighbor) {
             for (key in newGObject) {
-                if (rightNeighborObject.hasOwnProperty(key)) {
-                    x1 = rightNeighborX.toString();
-                    y1 = (parseInt(rightNeighborObject[key]) + djb.columnMidHeight).toString();
-                    x2 = (newObjectX - djb.columnWidth).toString();
-                    y2 = (parseInt(newGObject[key]) + djb.columnMidHeight).toString();
-                    newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    newLine.setAttribute('x1', x1);
-                    newLine.setAttribute('y1', y1);
-                    newLine.setAttribute('x2', x2);
-                    newLine.setAttribute('y2', y2);
-                    newLine.setAttribute('stroke', 'darkgray');
-                    newLine.setAttribute('stroke-width', '2');
-                    linesG.appendChild(newLine);
+                if (newGObject.hasOwnProperty(key)) {
+                    if (rightNeighborObject.hasOwnProperty(key)) {
+                        x1 = rightNeighborX.toString();
+                        y1 = (parseInt(rightNeighborObject[key]) + djb.columnMidHeight).toString();
+                        x2 = (newObjectX - djb.columnWidth).toString();
+                        y2 = (parseInt(newGObject[key]) + djb.columnMidHeight).toString();
+                        newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        newLine.setAttribute('x1', x1);
+                        newLine.setAttribute('y1', y1);
+                        newLine.setAttribute('x2', x2);
+                        newLine.setAttribute('y2', y2);
+                        newLine.setAttribute('stroke', 'darkgray');
+                        newLine.setAttribute('stroke-width', '2');
+                        linesG.appendChild(newLine);
+                    }
                 }
             }
         }
