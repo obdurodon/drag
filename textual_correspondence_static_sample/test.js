@@ -4,24 +4,18 @@
  * Developer: David J. Birnbaum, djbpitt@gmail.com http://www.obdurodon.org
  * Project: http://repertorium.obdurodon.org
  * Date: First version 2014-05-30
- * Last revised: 2014-06-18
+ * Last revised: 2014-06-22
+ *
+ * To do:
+ * Wrap initialization in self-executing anonymous function (SEAF) to
+ *   bypass addressing the window 'load' event explicitly:
+ *   http://code.tutsplus.com/tutorials/key-principles-of-maintainable-javascript--net-25536
  *
  * drag and drop based on http://dl.dropboxusercontent.com/u/169269/group_drag.svg
  * see also http://www.codedread.com/dragtest2.svg
  */
 window.addEventListener('load', plectogram_init, false);
-/**
- * initialize globals in djb namespace object
- *
- * adjustLinesAndColumns(): turns lines and columns gray or black
- * assignEventListeners(): djb.newG responds to mousedown; window monitors mousemove and mouseup
- * buildDict(): column property, an object with text titles as keys and y positions as values
- * createNewG(): clones the <g> where the <image> was clicked to move it to a higher z position
- * getXPos(): retrieves X position of column from @transform "translate()" value
- * htmlToArray(): makes HTML collection easier to handle
- */
-var djb;
-djb = function () {
+var djb = djb || function () {
     return {
         adjustLinesAndColumns: function (how) {
             // only values should be 'fade' and 'restore'
@@ -130,9 +124,9 @@ djb = function () {
             djb.newG.setAttribute('transform', 'translate(' + newObjectX + ')');
             djb.stretchLines();
             djb.mouseStartX = evt.clientX;
-            if (newObjectX < djb.objectX - djb.spacing && newObjectX != '0') {
+            if (newObjectX < djb.objectX - djb.spacing && newObjectX > '0') {
                 swapColumns('left');
-            } else if (newObjectX > djb.objectX + djb.spacing && djb.objectX != djb.farRight) {
+            } else if (newObjectX > djb.objectX + djb.spacing && djb.objectX < djb.farRight) {
                 swapColumns('right');
             }
         },
