@@ -74,12 +74,12 @@ var djb = function () {
             }); // numerical sort by Xpos of column
             linesG = document.getElementById('lines');
             for (i = 1; i < djb.columnCount; i++) {
+                x1 = columns[i].getXPos();
+                x2 = columns[i - 1].getXPos() + djb.columnWidth;
                 for (key in columns[i].contents) {
                     if (columns[i].contents.hasOwnProperty(key)) {
                         if (columns[i - 1].contents.hasOwnProperty(key)) {
-                            x1 = columns[i].getXPos();
                             y1 = parseInt(columns[i].contents[key]) + djb.columnMidHeight;
-                            x2 = columns[i - 1].getXPos() + djb.columnWidth;
                             y2 = parseInt(columns[i - 1].contents[key]) + djb.columnMidHeight;
                             newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                             newLine.setAttribute('x1', x1);
@@ -162,9 +162,14 @@ var djb = function () {
             for (var i = 0; i < lines.length; i++) {
                 var x1 = lines[i].getAttribute('x1');
                 var x2 = lines[i].getAttribute('x2');
-                if (x1 == djb.newG.oldX + djb.spacing) {
+                /*if (x1 == djb.newG.oldX + djb.spacing) {
                     lines[i].setAttribute('x2', newGX + djb.columnWidth);
                 } else if (x2 == (djb.newG.oldX - djb.spacing + djb.columnWidth)) {
+                    lines[i].setAttribute('x1', newGX);
+                }*/
+                if (x1 == djb.objectX + djb.spacing || x1 == djb.newG.oldX + djb.spacing) {
+                    lines[i].setAttribute('x2', newGX + djb.columnWidth);
+                } else if (x2 == djb.objectX - djb.spacing + djb.columnWidth || x2 == (djb.newG.oldX - djb.spacing + djb.columnWidth)) {
                     lines[i].setAttribute('x1', newGX);
                 }
             }
