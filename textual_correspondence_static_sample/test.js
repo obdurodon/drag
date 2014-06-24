@@ -180,13 +180,9 @@ var djb = function () {
             if (side == 'left') {
                 djb.objectX = djb.objectX - djb.spacing;
                 neighbor.setXPos(neighbor.getXPos() + djb.spacing);
-                djb.newG.setXPos(djb.objectX);
-                //console.log('djb.objectX = ' + djb.objectX + ' and djb.mouseStartX = ' + djb.mouseStartX + ' and djb.mouseStartX + djb.columnWidth = ' + (djb.mouseStartX + djb.columnWidth));
             } else {
                 djb.objectX = djb.objectX + djb.spacing;
                 neighbor.setXPos(neighbor.getXPos() - djb.spacing);
-                djb.newG.setXPos(djb.objectX);
-                //console.log('djb.objectX = ' + djb.objectX + ' and djb.mouseStartX = ' + djb.mouseStartX);
             }
             djb.eraseLines();
             djb.drawLines();
