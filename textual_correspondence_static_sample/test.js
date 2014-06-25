@@ -162,11 +162,6 @@ var djb = function () {
             for (var i = 0; i < lines.length; i++) {
                 var x1 = lines[i].getAttribute('x1');
                 var x2 = lines[i].getAttribute('x2');
-                /*if (x1 == djb.newG.oldX + djb.spacing) {
-                    lines[i].setAttribute('x2', newGX + djb.columnWidth);
-                } else if (x2 == (djb.newG.oldX - djb.spacing + djb.columnWidth)) {
-                    lines[i].setAttribute('x1', newGX);
-                }*/
                 if (x1 == djb.objectX + djb.spacing || x1 == djb.newG.oldX + djb.spacing) {
                     lines[i].setAttribute('x2', newGX + djb.columnWidth);
                 } else if (x2 == djb.objectX - djb.spacing + djb.columnWidth || x2 == (djb.newG.oldX - djb.spacing + djb.columnWidth)) {
