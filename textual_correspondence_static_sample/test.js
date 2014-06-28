@@ -128,6 +128,7 @@ var djb = function () {
             return Array.prototype.slice.call(htmlCollection);
         },
         moveIt: function (evt) {
+            evt.preventDefault();
             var oldObjectX = djb.newG.getXPos();
             var newObjectX = oldObjectX + evt.clientX - djb.mouseStartX;
             djb.newG.setXPos(newObjectX);
