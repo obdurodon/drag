@@ -65,7 +65,7 @@ var djb = function () {
             image.parentNode.parentNode.appendChild(djb.newG);
             image.parentNode.parentNode.removeChild(image.parentNode);
         },
-        drawLines_stable: function () {
+        drawLines: function () {
             var columns, key, x1, y1, x2, y2, linesG, newLine, i;
             columns = djb.htmlToArray(document.getElementsByClassName('draggable'));
             columns.sort(function (a, b) {
@@ -93,38 +93,6 @@ var djb = function () {
                     }
                 }
             }
-            djb.newG.oldX = djb.newG.getXPos();
-        },
-        drawLines: function () {
-            var columns, key, x1, y1, x2, y2, linesG, linesFragment, newLine, i;
-            columns = djb.htmlToArray(document.getElementsByClassName('draggable'));
-            columns.sort(function (a, b) {
-                var result = a.getXPos() - b.getXPos();
-                return (result);
-            }); // numerical sort by Xpos of column
-            linesG = document.getElementById('lines');
-            linesFragment = document.createDocumentFragment();
-            for (i = 1; i < djb.columnCount; i++) {
-                x1 = columns[i].getXPos();
-                x2 = columns[i - 1].getXPos() + djb.columnWidth;
-                for (key in columns[i].contents) {
-                    if (columns[i].contents.hasOwnProperty(key)) {
-                        if (columns[i - 1].contents.hasOwnProperty(key)) {
-                            y1 = parseInt(columns[i].contents[key]) + djb.columnMidHeight;
-                            y2 = parseInt(columns[i - 1].contents[key]) + djb.columnMidHeight;
-                            newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                            newLine.setAttribute('x1', x1);
-                            newLine.setAttribute('y1', y1);
-                            newLine.setAttribute('x2', x2);
-                            newLine.setAttribute('y2', y2);
-                            newLine.setAttribute('stroke', 'darkgray');
-                            newLine.setAttribute('stroke-width', '2');
-                            linesFragment.appendChild(newLine);
-                        }
-                    }
-                }
-            }
-            linesG.appendChild(linesFragment.cloneNode(true));
             djb.newG.oldX = djb.newG.getXPos();
         },
         endMove: function (evt) {
